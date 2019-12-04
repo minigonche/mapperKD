@@ -14,19 +14,16 @@
 #' @param filter an n x k matrix of the filter space values, where n corresponds to the number of observations and k to the filter space dimension.
 #' @param intervals a vector of k positive integers, the number of intervals for each correspong dimension of the filter space.
 #' @param overlap a vector of k numbers between 0 and 100, specifying how much adjacent intervals should overlap for each dimension of the filter space.
-#' @param clustering_method clustering method to be used for each pre-image. TODO: Finish description
+#' @param clustering_method clustering method to be used for each pre-image. The given funtion must receive as a parameter a distance matrix and return an array with the corresiponding number cluster for each point. Clusters numbers must start with 1 and have no gaps between them.
 #' @param low_ram a boolean indicating if the algorithm should be excecuted in a memory restricted enviorment
 #' @param data a data frame (or any other type of structure, as long as the distance_function is aware) containing the information necessary to calculate the distance. This parameter will only be used if \code{lowe_ram} is set to \code{TRUE}.
 #'
 #' @return An object of class \code{1_squeleton} which is composed of the following items:
 #'
-#' TODO: EDIT OUTPUT
-#' \code{adjacency} (adjacency matrix for the edges),
-#' \code{num_vertices} (integer number of vertices),
-#' \code{level_of_vertex} (vector with \code{level_of_vertex[i]} = index of the level set for vertex i),
-#' \code{points_in_vertex} (list with \code{points_in_vertex[[i]]} = vector of indices of points in vertex i),
-#' \code{points_in_level} (list with \code{points_in_level[[i]]} = vector of indices of points in level set i,
-#' \code{vertices_in_level} (list with \code{vertices_in_level[[i]]} = vector of indices of vertices in level set i.
+#' \code{adjacency_matrix} (adjacency matrix for the nodes),
+#' \code{degree_matrix} (degree matrix for the nodes (the number of points in the intersection of nodes)),
+#' \code{num_nodes} (integer number of vertices),
+#' \code{points_in_nodes} (list with the points inside each node),
 #'
 #' TODO: INCLUDE EXAMPLES
 #' @export
@@ -251,7 +248,16 @@ mapperKD = function(k,
   #   Adjacency matrix is simply the sign of the degree matrix
   adjacency_matrix = sign(degree_matrix)
 
+  # Constructs the response
+  # Object of type 1_squeleton
+  response = list()
+  response$adjacency_matrix = sign(degree_matrix)
+  response$degree_matrix = degree_matrix
+  response$num_nodes = num_nodes
+  response$points_in_nodes = elements_in_node
 
+  #Return
+  return(response)
 
 }
 
