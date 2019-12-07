@@ -94,8 +94,18 @@ mapperKD = function(k,
   # ----------------
 
   # Minimum and maximum filter values
-  filter_min = sapply(filter, min)
-  filter_max = sapply(filter, max)
+  if(k == 1)
+  {
+    filter_min = min(filter)
+    filter_max = max(filter)
+  }
+  else
+  {
+    filter_min = sapply(filter, min)
+    filter_max = sapply(filter, max)
+  }
+
+
 
   # Finds overlaped window size
   window_size = (filter_max - filter_min)/(intervals - (intervals - 1)*overlap/100)
@@ -122,8 +132,9 @@ mapperKD = function(k,
   coordinates = rep(1,k)
 
 
+
   # Loop ends when all coordinates get to the last value (the number of intervals)
-  while(any(coordinates != intervals))
+  repeat
   {
 
     # Sets up the current interval
@@ -150,7 +161,6 @@ mapperKD = function(k,
 
     # Extracts the current distance matrix
     # ------------------------
-
     if(!low_ram)
       current_matrix = distance[interval_indices,interval_indices]
     else
@@ -174,10 +184,17 @@ mapperKD = function(k,
       elements_in_node[[node]] = interval_indices[clusters_of_interval == node]
 
 
+    # Stop criteria
+    # FInished the last interval
+    if(all(coordinates == intervals))
+      break
+
 
     # Advances the coordinates
     # ------------------------
     coordinates = advance_coordinates(coordinates, intervals)
+
+
 
 
 
@@ -202,12 +219,13 @@ mapperKD = function(k,
   search_possibilities[overlap >= 50] = list(0:2)
 
 
-  #   The steps grid
+  #   The steps grid (structure to detect levels where possible intersection might occur)
   step_grid = as.matrix(expand.grid(search_possibilities))
   colnames(step_grid) <- NULL
 
   #   Removes itself from the possible steps
-  step_grid = step_grid[rowSums(step_grid) > 0,]
+  step_grid = as.matrix(step_grid[rowSums(step_grid) > 0,])
+
 
   # Loop ends when all coordinates get to the last value (the number of intervals)
   while(any(coordinates != intervals))
@@ -243,6 +261,8 @@ mapperKD = function(k,
     # ------------------------
     coordinates = advance_coordinates(coordinates, intervals)
 
+
+
   }# Finish adjacency and degrre loop
 
   #   Adjacency matrix is simply the sign of the degree matrix
@@ -263,11 +283,13 @@ mapperKD = function(k,
 
 
 
-#' Function for advancing
+#' Function for advancing coordinates
 advance_coordinates = function(coordinates, max_values)
 {
   current_pos = 1
   carry = TRUE
+  k = length(max_values)
+
   while(carry && current_pos <= k)
   {
     coordinates[current_pos] = coordinates[current_pos] + 1
