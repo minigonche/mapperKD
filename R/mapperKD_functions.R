@@ -1,3 +1,5 @@
+library('sets')
+
 #' Implementation of the mapper algorithm described in:
 #'
 #' G. Singh, F. Memoli, G. Carlsson (2007). Topological Methods for the Analysis of High Dimensional Data Sets and 3D Object Recognition, Point Based Graphics 2007, Prague, September 2007.
@@ -52,6 +54,9 @@ mapperKD = function(k,
 
   if(dim(filter)[2] != k)
     stop(paste('Expected a matrix with',k,'columns for the filter parameter but got a matrix with',dim(filter)[2],'columns instead'))
+
+  if(dim(filter)[1] == 1)
+    stop('Sample needs at least two points to work.')
 
   # Intervals
   if(k != 1 && length(intervals) == 1)
@@ -214,10 +219,12 @@ mapperKD = function(k,
   coordinates = rep(1,k)
 
   #   Constructs the search possibilities. Only checks intersection with further intervals (Adjacency matrix is symmetric)
-  #   If the overlap is 50% or larger, non adjacent intersection is possible and has to be taken into account
-  search_possibilities = rep(list(0:1),length(intervals))
-  search_possibilities[overlap >= 50] = list(0:2)
+  #   Depending on overlap, non adjacent intersection is possible
+  max_search_posibilities = ceiling(window_size/step_size) - 1
+  max_search_posibilities[window_size == 0] = Inf # In case the window size is 0 (which means that there is only one value in that coordinate). Will asisign number of intervals in next line.
+  max_search_posibilities = pmin(max_search_posibilities, intervals) # Should not check further than the total amount of intervals
 
+  search_possibilities = rep(list(0:max_search_posibilities),length(intervals))
 
   #   The steps grid (structure to detect levels where possible intersection might occur)
   step_grid = as.matrix(expand.grid(search_possibilities))
@@ -226,12 +233,16 @@ mapperKD = function(k,
   #   Removes itself from the possible steps
   step_grid = as.matrix(step_grid[rowSums(step_grid) > 0,])
 
+  # Converts all the node lists to sets for efficiency
+  elements_in_node_as_set = lapply(elements_in_node, as.set)
 
   # Loop ends when all coordinates get to the last value (the number of intervals)
   while(any(coordinates != intervals))
   {
 
+    # TODO Optimization: Remove intervals that are larger than the maximum interval
     current_nodes = nodes_per_interval[[coordinates]]
+
     #   Iterates over the possible adjacent intervals
     for(i in 1:nrow(step_grid))
     {
@@ -249,7 +260,7 @@ mapperKD = function(k,
       {
         for(k in neighbor_nodes)
         {
-          degree_matrix[k,v] = length(interaction(elements_in_node[v],elements_in_node[k]))
+          degree_matrix[k,v] = length(set_intersection(elements_in_node_as_set[[v]],elements_in_node_as_set[[k]]))
           degree_matrix[v,k] = degree_matrix[k,v]
         }
       }

@@ -57,7 +57,7 @@ context("MapperKD Unit Tests. Toy Examples. 1 Dimension")
 # Toy examples
 test_that("Toy Examples. 1 Dimension", {
 
-  # Following examples the distance matrix can be mock because the cluster method is: cluster all
+  # In following examples the distance matrix can be mock because the cluster method is: cluster all
 
   #Multiple overlapping intervals over same point
   # When only one point is included (or multiple with same filter), the output graph must be a clique
@@ -66,12 +66,11 @@ test_that("Toy Examples. 1 Dimension", {
   num_ite = 1
   for(i in 1:num_ite)
   {
-      num_points = sample(1:10, 1)
+      num_points = sample(2:10, 1)
       filter = rep(1,num_points)
       intervals = sample(2:10, 1)
       overlap = sample(1:99, 1)
 
-      # TODO: Revisar calculo de vecinos
       res = mapperKD(k = 1,
                      distance = matrix(rep(1,length(filter)**2), ncol = length(filter)),
                      filter = filter,
@@ -85,7 +84,6 @@ test_that("Toy Examples. 1 Dimension", {
       for(lev in res$points_in_nodes)
         expect_equal( length(lev), num_points )
 
-      print(res$adjacency_matrix)
       expect_equal( sum(res$adjacency_matrix), res$num_nodes**2 - res$num_nodes )
 
   }
@@ -130,11 +128,6 @@ test_that("Toy Examples. 1 Dimension", {
 })
 
 
-# For Testing
-cluster_all = function(distance_matrix)
-{
-  return(rep(1, dim(distance_matrix)[1]))
-}
 
 
 
