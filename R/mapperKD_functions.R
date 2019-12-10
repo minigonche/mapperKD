@@ -106,8 +106,8 @@ mapperKD = function(k,
   }
   else
   {
-    filter_min = sapply(filter, min)
-    filter_max = sapply(filter, max)
+    filter_min = apply(filter,2, min)
+    filter_max = apply(filter,2, max)
   }
 
 
@@ -117,6 +117,7 @@ mapperKD = function(k,
 
   # Step size
   step_size = window_size*(1 - overlap/100)
+
 
   # Initializes the output parameters
 
@@ -137,7 +138,6 @@ mapperKD = function(k,
   coordinates = rep(1,k)
 
 
-
   # Loop ends when all coordinates get to the last value (the number of intervals)
   repeat
   {
@@ -150,6 +150,7 @@ mapperKD = function(k,
     #   For of numeric precision, the max filter value for the las intervals in each dimension are forced to be the filter's max value on the correponding dimension
     interval_max[coordinates == intervals] = filter_max[coordinates == intervals]
 
+
     #   Gets the indices of the samples that fall on the current interval
     #   NOTE: this implemenatation uses closed intervals
     #     Currently uses the sweep function to build two matrices for the min and max
@@ -161,7 +162,6 @@ mapperKD = function(k,
     #   Interval indices
     logical_interval_indices = rowSums(inside_matrix) == k
     interval_indices = which(logical_interval_indices)
-
 
 
     # Extracts the current distance matrix
@@ -190,9 +190,10 @@ mapperKD = function(k,
 
 
     # Stop criteria
-    # FInished the last interval
+    # Finished the last interval
     if(all(coordinates == intervals))
       break
+
 
 
     # Advances the coordinates
@@ -219,19 +220,8 @@ mapperKD = function(k,
   coordinates = rep(1,k)
 
   #   Constructs the search possibilities. Only checks intersection with further intervals (Adjacency matrix is symmetric)
-  #   Depending on overlap, non adjacent intersection is possible
-  max_search_posibilities = ceiling(window_size/step_size) - 1
-  max_search_posibilities[window_size == 0] = Inf # In case the window size is 0 (which means that there is only one value in that coordinate). Will asisign number of intervals in next line.
-  max_search_posibilities = pmin(max_search_posibilities, intervals) # Should not check further than the total amount of intervals
-
-  search_possibilities = rep(list(0:max_search_posibilities),length(intervals))
-
-  #   The steps grid (structure to detect levels where possible intersection might occur)
-  step_grid = as.matrix(expand.grid(search_possibilities))
-  colnames(step_grid) <- NULL
-
-  #   Removes itself from the possible steps
-  step_grid = as.matrix(step_grid[rowSums(step_grid) > 0,])
+  # Extracts the step grid
+  step_grid = construct_step_grid(filter_min, filter_max, overlap)
 
   # Converts all the node lists to sets for efficiency
   elements_in_node_as_set = lapply(elements_in_node, as.set)
@@ -292,6 +282,36 @@ mapperKD = function(k,
 
 }
 
+
+#' Function that calculates the forward grid search space.
+#' This method should return all the values that should be added to interval to obtain all the possible places
+#' where an intersection might occur. This functionality is isolated inside a method to test it individually.
+construct_step_grid = function(filter_min, filter_max, overlap)
+{
+  #   Constructs the search possibilities. Only checks intersection with further intervals (Adjacency matrix is symmetric)
+
+  # Finds overlaped window size
+  window_size = (filter_max - filter_min)/(intervals - (intervals - 1)*overlap/100)
+  # Step size
+  step_size = window_size*(1 - overlap/100)
+
+  #   Depending on overlap, non adjacent intersection is possible
+  max_search_posibilities = ceiling(window_size/step_size) - 1
+  max_search_posibilities[window_size == 0] = Inf # In case the window size is 0 (which means that there is only one value in that coordinate). Will asisign number of intervals in next line.
+  max_search_posibilities = pmin(max_search_posibilities, intervals) # Should not check further than the total amount of intervals
+
+  # Creates the search possibilities
+  search_possibilities = lapply(1:length(intervals), function(i){0:max_search_posibilities[i]})
+
+  #   The steps grid (structure to detect levels where possible intersection might occur)
+  step_grid = as.matrix(expand.grid(search_possibilities))
+  colnames(step_grid) <- NULL
+
+  #   Removes itself from the possible steps
+  step_grid = as.matrix(step_grid[rowSums(step_grid) > 0,])
+
+  return(step_grid)
+}
 
 
 #' Function for advancing coordinates

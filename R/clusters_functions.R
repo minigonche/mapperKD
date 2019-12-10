@@ -12,11 +12,21 @@
 # For Testing
 cluster_all = function(distance_matrix)
 {
-  return(rep(1, dim(distance_matrix)[1]))
+  if(length(distance_matrix) == 1)
+    times = 1
+  else
+    times = dim(distance_matrix)[1]
+
+  return(rep(1, times))
 }
 
 cluster_none = function(distance_matrix)
 {
-  return(1:dim(distance_matrix)[1])
+  if(length(distance_matrix) == 1)
+    times = 1
+  else
+    times = dim(distance_matrix)[1]
+
+  return(1:times)
 }
 
