@@ -9,7 +9,8 @@
 #'       numeric array: numeric array with the corresponding number of cluster each point belongs to (in the order of the distace matrix). Should start with 1 and have no gaps.
 #'
 
-# For Testing
+# Functions for Testing
+# Clusters all point into a single cluster
 cluster_all = function(distance_matrix)
 {
   if(length(distance_matrix) == 1)
@@ -20,6 +21,7 @@ cluster_all = function(distance_matrix)
   return(rep(1, times))
 }
 
+# Creates a cluster for every point received
 cluster_none = function(distance_matrix)
 {
   if(length(distance_matrix) == 1)
@@ -30,3 +32,22 @@ cluster_none = function(distance_matrix)
   return(1:times)
 }
 
+
+# Hierarchical Clustering
+#' Preforms Hierarchical Clustering
+#' @param distance_matrix the distance matrix to be used.
+#' @param method The method to be used to merge the clusters. See the documentation of hclust for details.
+#' @param height The
+hierarchical_clustering = function(distance_matrix, method = 'complete', height = -1, )
+{
+
+  # Assings the mean of the distance as height if no height is given
+  if(height == -1)
+    height = mean(upper.tri(distance_matrix))
+
+  clusters = cutree(hclust(as.dist(distance_matrix), method = method), h = height)
+
+  return(clusters)
+
+
+}

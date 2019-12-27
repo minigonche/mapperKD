@@ -1,4 +1,4 @@
-library('sets')
+require('sets')
 
 #' Implementation of the mapper algorithm described in:
 #'
@@ -20,12 +20,14 @@ library('sets')
 #' @param low_ram a boolean indicating if the algorithm should be excecuted in a memory restricted enviorment
 #' @param data a data frame (or any other type of structure, as long as the distance_function is aware) containing the information necessary to calculate the distance. This parameter will only be used if \code{lowe_ram} is set to \code{TRUE}.
 #'
-#' @return An object of class \code{1_squeleton} which is composed of the following items:
+#' @return An object of class \code{one_squeleton} which is composed of the following items:
 #'
 #' \code{adjacency_matrix} (adjacency matrix for the nodes),
 #' \code{degree_matrix} (degree matrix for the nodes (the number of points in the intersection of nodes)),
 #' \code{num_nodes} (integer number of vertices),
 #' \code{points_in_nodes} (list with the points inside each node),
+#' \code{nodes_per_interval} (list of lists, accesible through the vector id of the interval that contains the nodes that where constructucted inside of it)
+#' \code{points_per_interval} (list of lists, accesible through the vector id of the interval that contains the points that are contained inside of it)
 #'
 #' TODO: INCLUDE EXAMPLES
 #' @export
@@ -111,7 +113,6 @@ mapperKD = function(k,
   }
 
 
-
   # Finds overlaped window size
   window_size = (filter_max - filter_min)/(intervals - (intervals - 1)*overlap/100)
 
@@ -121,12 +122,19 @@ mapperKD = function(k,
 
   # Initializes the output parameters
 
-  # Initializes the nodes_per_interval parameter
+  # Initializes the nodes_per_interval variable
   # A list of list of the number of dimensions in the filter space
   nodes_per_interval = sapply(1:intervals[length(intervals)], function(x) c())
   for(num_inte in rev(intervals)[-1])
     nodes_per_interval = sapply(1:num_inte, function(x) list(nodes_per_interval))
 
+  # Initializes the point_per_interval variable
+  # A list of list of the number of dimensions in the filter space
+  points_per_interval = sapply(1:intervals[length(intervals)], function(x) c())
+  for(num_inte in rev(intervals)[-1])
+    points_per_interval = sapply(1:num_inte, function(x) list(points_per_interval))
+
+  # Starts the elements_in_node variable
   elements_in_node = list()
 
 
@@ -188,6 +196,8 @@ mapperKD = function(k,
     for(node in clusters_of_interval)
       elements_in_node[[node]] = interval_indices[clusters_of_interval == node]
 
+    # Adds all the points to the npoint_per_interval
+    points_per_interval[[coordinates]] = interval_indices
 
     # Stop criteria
     # Finished the last interval
@@ -221,7 +231,7 @@ mapperKD = function(k,
 
   #   Constructs the search possibilities. Only checks intersection with further intervals (Adjacency matrix is symmetric)
   # Extracts the step grid
-  step_grid = construct_step_grid(filter_min, filter_max, overlap)
+  step_grid = construct_step_grid(filter_min, filter_max, intervals, overlap)
 
   # Converts all the node lists to sets for efficiency
   elements_in_node_as_set = lapply(elements_in_node, as.set)
@@ -229,34 +239,58 @@ mapperKD = function(k,
   # Loop ends when all coordinates get to the last value (the number of intervals)
   while(any(coordinates != intervals))
   {
-
-    # TODO Optimization: Remove intervals that are larger than the maximum interval
+    # Gets current nodes
     current_nodes = nodes_per_interval[[coordinates]]
 
+    # If empty, continunes
+    if(length(current_nodes) == 0)
+    {
+      coordinates = advance_coordinates(coordinates, intervals)
+      next
+    }
+
+
+    # Calculates possible coordinates
+    possible_coordinates = sweep(step_grid, 2, coordinates, "+")
+
+    possible_indices = rowSums(sweep(possible_coordinates, 2, intervals, FUN = "<=")) == k
+    possible_coordinates = matrix(possible_coordinates[possible_indices,], nrow = sum(possible_indices), ncol = k)
+
+
+    # If empty, continunes
+    if(length(possible_coordinates) == 0)
+    {
+      coordinates = advance_coordinates(coordinates, intervals)
+      next
+    }
+
     #   Iterates over the possible adjacent intervals
-    for(i in 1:nrow(step_grid))
+    for(i in 1:nrow(possible_coordinates))
     {
 
       # Gets neighbor interval
-      neighbor_coordinates = coordinates + step_grid[i,]
+      neighbor_coordinates = possible_coordinates[i,]
 
       # Continues if outside interval grid
-      if(any(neighbor_coordinates > intervals))
-        next
+      #if(any(neighbor_coordinates > intervals))
+      #  next
 
       neighbor_nodes = nodes_per_interval[[neighbor_coordinates]]
 
+      # If empty, continunes
+      if(length(neighbor_nodes) == 0)
+        next
+
       for(v in current_nodes)
       {
-        for(k in neighbor_nodes)
+        for(l in neighbor_nodes)
         {
-          degree_matrix[k,v] = length(set_intersection(elements_in_node_as_set[[v]],elements_in_node_as_set[[k]]))
-          degree_matrix[v,k] = degree_matrix[k,v]
+          degree_matrix[l,v] = length(set_intersection(elements_in_node_as_set[[v]],elements_in_node_as_set[[l]]))
+          degree_matrix[v,l] = degree_matrix[l,v]
         }
       }
 
     }
-
 
     # Advances the coordinates
     # ------------------------
@@ -276,6 +310,9 @@ mapperKD = function(k,
   response$degree_matrix = degree_matrix
   response$num_nodes = num_nodes
   response$points_in_nodes = elements_in_node
+  response$nodes_per_interval = nodes_per_interval
+  response$points_per_interval = points_per_interval
+
 
   #Return
   return(response)
@@ -286,18 +323,19 @@ mapperKD = function(k,
 #' Function that calculates the forward grid search space.
 #' This method should return all the values that should be added to interval to obtain all the possible places
 #' where an intersection might occur. This functionality is isolated inside a method to test it individually.
-construct_step_grid = function(filter_min, filter_max, overlap)
+construct_step_grid = function(filter_min, filter_max, intervals, overlap)
 {
-  #   Constructs the search possibilities. Only checks intersection with further intervals (Adjacency matrix is symmetric)
+
+  # Constructs the search possibilities. Only checks intersection with further intervals (Adjacency matrix is symmetric)
 
   # Finds overlaped window size
   window_size = (filter_max - filter_min)/(intervals - (intervals - 1)*overlap/100)
   # Step size
   step_size = window_size*(1 - overlap/100)
 
-  #   Depending on overlap, non adjacent intersection is possible
-  max_search_posibilities = ceiling(window_size/step_size) - 1
-  max_search_posibilities[window_size == 0] = Inf # In case the window size is 0 (which means that there is only one value in that coordinate). Will asisign number of intervals in next line.
+  # Depending on overlap, non adjacent intersection is possible
+
+  max_search_posibilities = ceiling(1/(1 - overlap/100)) - 1
   max_search_posibilities = pmin(max_search_posibilities, intervals) # Should not check further than the total amount of intervals
 
   # Creates the search possibilities
@@ -312,7 +350,6 @@ construct_step_grid = function(filter_min, filter_max, overlap)
 
   return(step_grid)
 }
-
 
 #' Function for advancing coordinates
 advance_coordinates = function(coordinates, max_values)
