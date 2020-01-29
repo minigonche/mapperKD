@@ -139,5 +139,6 @@ test_that("Toy Examples. 2 Dimension", {
 
 
   expect_true(is_circle(res))
+
 })
 
