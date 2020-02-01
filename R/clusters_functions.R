@@ -39,7 +39,7 @@ cluster_none = function(distance_matrix)
 #' @param method The method to be used to merge the clusters. See the documentation of hclust for details. Deafult parameter is: complete
 #' @param height The height at wich the tree will be cut and the clusters generated. If a negative number id provided,
 #' the tree will be cut at the mean of the upper triangular part of the provided distance matrix.
-hierarchical_clustering = function(distance_matrix, method = 'complete', height = -1, )
+hierarchical_clustering = function(distance_matrix, method = 'single', height = -1 )
 {
 
   # Assings the mean of the distance as height if no height is given

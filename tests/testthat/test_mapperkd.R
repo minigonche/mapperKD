@@ -120,7 +120,7 @@ test_that("Toy Examples. 1 Dimension", {
 context("MapperKD Tests. Toy Examples. 2 Dimensions. Circle. Filter 2D")
 
 # Toy examples
-test_that("Toy Examples. 2 Dimension", {
+test_that("Toy Examples. 2 Dimension. Circle 2D", {
 
   # Simple Circle
   num_points = 100
@@ -134,6 +134,51 @@ test_that("Toy Examples. 2 Dimension", {
                  intervals = intervals,
                  overlap = overlap,
                  clustering_method = cluster_all,
+                 low_ram = FALSE,
+                 data = NA)
+
+
+  expect_true(is_circle(res))
+
+})
+
+context("MapperKD Tests. Toy Examples. 2 Dimensions. Circle. Filter 1D")
+
+# Toy examples
+test_that("Toy Examples. 2 Dimension. Circle 1D", {
+
+  # Simple Circle
+  # Y coordinate
+  num_points = 100
+  points = cbind(cos(1:num_points), sin(1:num_points))
+  filter = points[,2]
+  intervals = c(6)
+  overlap = c(40)
+  res = mapperKD(k = 1,
+                 distance = as.matrix(dist(points)),
+                 filter = filter,
+                 intervals = intervals,
+                 overlap = overlap,
+                 clustering_method = function(x){hierarchical_clustering(x,  method = 'single', height =-1)},
+                 low_ram = FALSE,
+                 data = NA)
+
+
+  expect_true(is_circle(res))
+
+
+  # x coordinate
+  num_points = 100
+  points = cbind(cos(1:num_points), sin(1:num_points))
+  filter = points[,1]
+  intervals = c(6)
+  overlap = c(40)
+  res = mapperKD(k = 1,
+                 distance = as.matrix(dist(points)),
+                 filter = filter,
+                 intervals = intervals,
+                 overlap = overlap,
+                 clustering_method = function(x){hierarchical_clustering(x,  method = 'single', height =-1)},
                  low_ram = FALSE,
                  data = NA)
 
