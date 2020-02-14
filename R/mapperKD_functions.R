@@ -36,11 +36,11 @@ require('sets')
 #' # Construct the data set
 #' data_points = data.frame( x=c(cos(1:50) - 1, cos(1:50) + 1), y=sin(1:100) )
 #' plot(data_points)
-#' # Excecutes mapper
+#' # Executes mapper
 #' one_squeleton_result = mapperKD(k = 1,
 #'                                 distance = as.matrix(dist(data_points)),
 #'                                 filter = data_points$x,
-#'                                 intervals = c(8),
+#'                                 intervals = c(12),
 #'                                 overlap = c(50),
 #'                                 clustering_method = hierarchical_clustering,
 #'                                 local_distance = FALSE,
