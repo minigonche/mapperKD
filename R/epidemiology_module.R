@@ -151,22 +151,21 @@ create_point_intersection_network = function(one_squeleton_result)
 }
 
 
-# TODO: Include color
-# TODO: Adjust sizes
+
+
 # TODO: Remove FOr Loop
-# TODO: Include de map scheme
 # plot_point_intersection_network
 #' Plots the point intersection network with geographical coordinates
 #' @param adj_matrix The adjacency matrix of the point intersection network
 #' @param lon A vector with the longitude coordinates (in decimal notation) of the points
 #' @param lat A vector with the latitude coordinates (in decimal notation) of the points
-#' @param sizes A vector or number with the size/s of the points. Default is 1.
-#' @param colors A vector or number with the color/s of the points. Default is blue.
-#' @return ggplot plottable object with the point intersection network
-plot_point_intersection_network = function(adj_matrix, lon, lat, sizes = 1, colors = 'blue', map = NULL)
+#' @return a tuple with the following values
+#'   - Points (DataFrame): Where x is lon and y is latitude
+#'   - Arrows (DataFrame): where x1, x2 are the longitude of the start and finish of the arrows and y1,y2 the latitudes
+plot_point_intersection_network = function(adj_matrix, lon, lat)
 {
   # Constructs the arrows
-  # SOrry for the for
+  # Sorry for the for
   org = c()
   dest = c()
   for(i in 1:nrow(adj_matrix))
@@ -189,25 +188,12 @@ plot_point_intersection_network = function(adj_matrix, lon, lat, sizes = 1, colo
   x2 = lon[dest]
   y2 = lat[dest]
 
-  data_points = data.frame(lon = lon, lat = lat)
-  data_segments = data.frame(x1 = x1, y1 = y1, x2 = x2, y2 = y2)
+  response = list()
+  response[[1]] = data.frame(lon = lon, lat = lat)
+  response[[2]] = data.frame(x1 = x1, y1 = y1, x2 = x2, y2 = y2)
 
 
-  # Creates objects
-  if(is.null(map))
-  {
-    p =  ggplot() + geom_point(aes(x = lon, y = lat), size = sizes, colour = colors) +
-      geom_segment(aes(x = x1, y = y1, xend = x2, yend = y2), color = "yellow", size = 0.15, arrow = arrow(length = unit(0.03, "npc")))
-
-  }
-  else
-  {
-    p =  ggmap(map) + geom_point(data = data_points, aes(x = lon, y = lat), size = sizes, colour = colors) +
-      geom_segment(data = data_segments, aes(x = x1, y = y1, xend = x2, yend = y2), color = "yellow", size = 0.15, arrow = arrow(length = unit(0.03, "npc")))
-
-  }
-
-  return(p)
+  return(response)
 
 }
 
