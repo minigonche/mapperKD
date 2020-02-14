@@ -27,12 +27,14 @@ data_points = data.frame( x=c(cos(1:50) - 1, cos(1:50) + 1), y=sin(1:100) )
 plot(data_points)
 ```
 
+![output_sample_points](img/example_plot.png)
+
 ```{r }
 # Excecutes mapper
 one_squeleton_result = mapperKD(k = 1,
                                 distance = as.matrix(dist(data_points)),
                                 filter = data_points$x,
-                                intervals = c(8),
+                                intervals = c(12),
                                 overlap = c(50),
                                 clustering_method = hierarchical_clustering,
                                 local_distance = FALSE,
@@ -42,3 +44,4 @@ g = convert_to_graph(one_squeleton_result)
 V(g)$size = sqrt(get_1_esqueleton_node_sizes(one_squeleton_result)*30)
 plot(g)
 ```
+![output_graph](img/example_graph.png)
