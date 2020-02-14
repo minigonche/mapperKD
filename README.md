@@ -5,3 +5,13 @@ This implementation lets the user use:
 * A filter of any dimension.
 * Custom clustering algorithm.
 
+## Instalation
+
+To intall simply excecute:
+
+```{r }
+# If you don't have devtools
+# install.packages("devtools")
+library(devtools)
+install_github("minigonche/mapperKD")
+```
