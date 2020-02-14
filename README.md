@@ -30,7 +30,7 @@ plot(data_points)
 ![output_sample_points](img/example_plot.png)
 
 ```{r }
-# Excecutes mapper
+# Executes mapper
 one_squeleton_result = mapperKD(k = 1,
                                 distance = as.matrix(dist(data_points)),
                                 filter = data_points$x,
