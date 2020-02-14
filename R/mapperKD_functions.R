@@ -12,13 +12,13 @@ require('sets')
 #'
 #' This function uses a filter function f: X -> R^k on a data set X that has n rows (observations) and m columns (variables).
 #' @param k a positive integer indicating the number of dimensions of the filter space
-#' @param distance an n x n matrix of pairwise distances or dissimilarities. If the parameter \code{low_ram} is set to \code{TRUE}, this paraeter corresponds to a function that receives as parameters a dataset and index vector, to output the correponding distance matrix of only the given indices.
+#' @param distance an n x n matrix of pairwise distances or dissimilarities. If the parameter \code{local_distance} is set to \code{TRUE}, this parameter is ignored since the clustering algorithm will receive a subset of the data.
 #' @param filter an n x k matrix of the filter space values, where n corresponds to the number of observations and k to the filter space dimension.
 #' @param intervals a vector of k positive integers, the number of intervals for each correspong dimension of the filter space.
 #' @param overlap a vector of k numbers between 0 and 100, specifying how much adjacent intervals should overlap for each dimension of the filter space.
-#' @param clustering_method clustering method to be used for each pre-image. The given funtion must receive as a parameter a distance matrix and return an array with the corresiponding number cluster for each point. Clusters numbers must start with 1 and have no gaps between them.
-#' @param low_ram a boolean indicating if the algorithm should be excecuted in a memory restricted enviorment
-#' @param data a data frame (or any other type of structure, as long as the distance_function is aware) containing the information necessary to calculate the distance. This parameter will only be used if \code{lowe_ram} is set to \code{TRUE}.
+#' @param clustering_method clustering method to be used for each pre-image. If the parameter \code{local_distance} is set to \code{TRUE}, the given funtion must receive as a parameter a distance matrix. If the parameter \code{local_distance} is set to \code{FALSE}, the given funtion must receive as a parameter a data.frame. In any case, it mus return an array with the corresiponding number cluster for each of the given points. Clusters numbers must start with 1 and have no gaps between them.
+#' @param local_distance a boolean indicating if the algorithm should construct the distance function based on the data at every pre-image. Usefull for low RAM enviorments or specific clustering.
+#' @param data a data frame containing the information necessary to excecute the clustering procedure. This parameter will only be used if \code{local_distance} is set to \code{TRUE}.
 #'
 #' @return An object of class \code{one_squeleton} which is composed of the following items:
 #'
@@ -29,7 +29,29 @@ require('sets')
 #' \code{nodes_per_interval} (list of lists, accesible through the vector id of the interval that contains the nodes that where constructucted inside of it)
 #' \code{points_per_interval} (list of lists, accesible through the vector id of the interval that contains the points that are contained inside of it)
 #'
-#' TODO: INCLUDE EXAMPLES
+#' @examples
+#' library('mapperKD')
+#' # Example
+#' # ----------------
+#' # Construct the data set
+#' data_points = data.frame( x=c(cos(1:50) - 1, cos(1:50) + 1), y=sin(1:100) )
+#' plot(data_points)
+#' # Excecutes mapper
+#' one_squeleton_result = mapperKD(k = 1,
+#'                                 distance = as.matrix(dist(data_points)),
+#'                                 filter = data_points$x,
+#'                                 intervals = c(8),
+#'                                 overlap = c(50),
+#'                                 clustering_method = hierarchical_clustering,
+#'                                 local_distance = FALSE,
+#'                                 data = NA)
+#' # Visualize the result
+#' g = convert_to_graph(one_squeleton_result)
+#' V(g)$size = sqrt(get_1_esqueleton_node_sizes(one_squeleton_result)*30)
+#' splot(g)
+#'
+#' @export
+#'
 #' @export
 #'
 mapperKD = function(k,
@@ -38,7 +60,7 @@ mapperKD = function(k,
                     intervals,
                     overlap,
                     clustering_method,
-                    low_ram,
+                    local_distance,
                     data)
 {
 
@@ -87,12 +109,9 @@ mapperKD = function(k,
   if(any(intervals < 0) || any(intervals > 100))
     stop('All interval values must have values between 0 and a 100.')
 
-  # Checks if the ram parameter is True and the distance is a function
-  if(low_ram && typeof(distance) != "closure")
-    stop('low_ram is set to TRUE, so the distance parameter must be a function.')
 
-  if(low_ram && missing(data))
-    stop('low_ram is set to TRUE, so the data parameter must be supplied.')
+  if(local_distance && missing(data))
+    stop('local_distance is set to TRUE, so the data parameter must be supplied.')
 
 
 
@@ -172,18 +191,25 @@ mapperKD = function(k,
     interval_indices = which(logical_interval_indices)
 
 
-    # Extracts the current distance matrix
+    # Excecutes the clustering scheme
     # ------------------------
-    if(!low_ram)
+    if(!local_distance) # Global distance
+    {
+      # -Extracts the current matrix
       current_matrix = distance[interval_indices,interval_indices]
-    else
-      current_matrix = distance(data, interval_indices)
+
+      # Excecutes the clustering algorithm
+      clusters_of_interval = clustering_method(current_matrix)
+    }
+    else # Local distance
+    {
+      # Filters the data
+      current_data = data[interval_indices,]
+      # Excecutes the clustering algorithm
+      clusters_of_interval = clustering_method(current_data)
+    }
 
 
-
-    # Excecutes the clustering algorithm
-    # ------------------------
-    clusters_of_interval = clustering_method(current_matrix)
 
     # Constructs the nodes and adds them to the nodes_per_interval array
     #   Adjust the indices of the clusters to correpond with the nodes

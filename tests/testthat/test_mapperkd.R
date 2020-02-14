@@ -66,7 +66,7 @@ test_that("Toy Examples. 1 Dimension", {
                    intervals = intervals,
                    overlap = overlap,
                    clustering_method = cluster_all,
-                   low_ram = FALSE,
+                   local_distance = FALSE,
                    data = NA)
 
     expect_equal( res$num_nodes, intervals )
@@ -87,7 +87,7 @@ test_that("Toy Examples. 1 Dimension", {
                  intervals = intervals,
                  overlap = overlap,
                  clustering_method = cluster_all,
-                 low_ram = FALSE,
+                 local_distance = FALSE,
                  data = NA)
 
   expect_equal( res$num_nodes, 2 )
@@ -105,7 +105,7 @@ test_that("Toy Examples. 1 Dimension", {
                  intervals = intervals,
                  overlap = overlap,
                  clustering_method = cluster_all,
-                 low_ram = FALSE,
+                 local_distance = FALSE,
                  data = NA)
 
   expect_equal( res$num_nodes, 2 )
@@ -134,7 +134,7 @@ test_that("Toy Examples. 2 Dimension. Circle 2D", {
                  intervals = intervals,
                  overlap = overlap,
                  clustering_method = cluster_all,
-                 low_ram = FALSE,
+                 local_distance = FALSE,
                  data = NA)
 
 
@@ -160,7 +160,7 @@ test_that("Toy Examples. 2 Dimension. Circle 1D", {
                  intervals = intervals,
                  overlap = overlap,
                  clustering_method = function(x){hierarchical_clustering(x,  method = 'single', height =-1)},
-                 low_ram = FALSE,
+                 local_distance = FALSE,
                  data = NA)
 
 
@@ -179,7 +179,7 @@ test_that("Toy Examples. 2 Dimension. Circle 1D", {
                  intervals = intervals,
                  overlap = overlap,
                  clustering_method = function(x){hierarchical_clustering(x,  method = 'single', height =-1)},
-                 low_ram = FALSE,
+                 local_distance = FALSE,
                  data = NA)
 
 

@@ -9,6 +9,19 @@ require('igraph')
 #' --- 1-Esqueleton Functions -------
 #' ----------------------------------
 
+# convert_to_graph
+#' Transforms the given 1 esqueleton result into an igraph graph.
+#' @param one_squeleton_result The one_squeleton to convert
+#' @return A vector with the corresponding sizes
+convert_to_graph = function(one_squeleton_result)
+{
+  # Creates the graph
+  g = graph.adjacency(one_squeleton_result$adjacency_matrix, mode = 'undirected')
+  # Sets colors and labels
+  V(g)$label = NA
+  V(g)$color = rgb(0.2,1,0,0.3) # Lightgreen
+  return(g)
+}
 
 # get_1_esqueleton_node_sizes
 #' Gets the size of each of the 1 esqueleton nodes. The size of each node is the amount of point it cointains
