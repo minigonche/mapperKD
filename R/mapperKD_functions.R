@@ -16,8 +16,8 @@ require('sets')
 #' @param filter an n x k matrix of the filter space values, where n corresponds to the number of observations and k to the filter space dimension.
 #' @param intervals a vector of k positive integers, the number of intervals for each correspong dimension of the filter space.
 #' @param overlap a vector of k numbers between 0 and 100, specifying how much adjacent intervals should overlap for each dimension of the filter space.
-#' @param clustering_method clustering method to be used for each pre-image. If the parameter \code{local_distance} is set to \code{TRUE}, the given funtion must receive as a parameter a distance matrix. If the parameter \code{local_distance} is set to \code{FALSE}, the given funtion must receive as a parameter a data.frame. In any case, it mus return an array with the corresiponding number cluster for each of the given points. Clusters numbers must start with 1 and have no gaps between them.
-#' @param local_distance a boolean indicating if the algorithm should construct the distance function based on the data at every pre-image. Usefull for low RAM enviorments or specific clustering.
+#' @param clustering_method clustering method to be used for each pre-image. If the parameter \code{local_distance} is set to \code{TRUE}, the given funtion must receive as a parameter a distance matrix. If the parameter \code{local_distance} is set to \code{FALSE}, the given funtion must receive as a parameter a data.frame. In any case, it mus return an array with the corresiponding number cluster for each of the given points. Clusters numbers must start with 1 and have no gaps between them. Default is: hierarchical_clustering
+#' @param local_distance a boolean indicating if the algorithm should construct the distance function based on the data at every pre-image. Usefull for low RAM enviorments or specific clustering. Default value is \code{FALSE}
 #' @param data a data frame containing the information necessary to excecute the clustering procedure. This parameter will only be used if \code{local_distance} is set to \code{TRUE}.
 #'
 #' @return An object of class \code{one_squeleton} which is composed of the following items:
@@ -59,15 +59,15 @@ mapperKD = function(k,
                     filter,
                     intervals,
                     overlap,
-                    clustering_method,
-                    local_distance,
-                    data)
+                    clustering_method = hierarchical_clustering,
+                    local_distance = FALSE,
+                    data = NA)
 {
 
   # Parameter consistency check
   # --------------------
   # Filter
-  if(is.null(filter) | is.na(filter))
+  if(is.null(filter) || is.na(filter))
     stop('Filter cannot be NULL')
   
   if(!is.matrix(filter))
@@ -86,7 +86,7 @@ mapperKD = function(k,
     stop('Sample needs at least two points to work.')
 
   # Intervals
-  if(is.null(intervals) | is.na(intervals))
+  if(is.null(intervals) || is.na(intervals))
     stop('Intervals cannot be NULL')
   
   if(k != 1 && length(intervals) == 1)
@@ -103,7 +103,7 @@ mapperKD = function(k,
 
 
   # Overlap
-  if(is.null(overlap) | is.na(overlap))
+  if(is.null(overlap) || is.na(overlap))
     stop('Overlap cannot be NULL')
   
   if(k != 1 && length(overlap) == 1)
@@ -115,11 +115,11 @@ mapperKD = function(k,
   if(length(overlap) != k )
     stop(paste('Expected a',k,'dimensional vector for the overlap parameter but got a',length(intervals),'dimensional vector instead'))
 
-  if(any(intervals < 0) | any(intervals > 100))
+  if(any(intervals < 0) || any(intervals > 100))
     stop('All interval values must have values between 0 and a 100.')
 
   # Distance
-  if(is.null(distance) | is.na(distance))
+  if(is.null(distance) || is.na(distance))
     stop('Distance cannot be NULL')
 
   if(local_distance && missing(data))
