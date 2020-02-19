@@ -2,7 +2,6 @@ Package: mapperKD
 Type: Package
 Title: Mapper Algorithm
 Version: 0.1.0
-Author: Felipe Gonzalez-Casabianca
 Authors@R: c(person("Felipe", "Gonzalez-Casabianca", email = "minigonche@gmail.com", role = c("aut", "cre","trl"))
 Maintainer: Felipe Gonzalez-Casabianca <minigonche@gmail.com>
 Description: An implementation of the mapper algorithm.
