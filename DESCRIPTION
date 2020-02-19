@@ -7,7 +7,7 @@ Maintainer: Felipe Gonzalez-Casabianca <minigonche@gmail.com>
 Description: An implementation of the mapper algorithm.
     The implementation includes a module for appying mapper over epidemiology data.
 License: GPL-3
-Imports: ggplot2, igraph, sets
+Imports: ggplot2, igraph, sets, ggmap
 Encoding: UTF-8
 URL: https://github.com/minigonche/mapperKD/
 LazyData: true
