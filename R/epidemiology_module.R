@@ -1,5 +1,6 @@
 require('ggplot2')
 require('igraph')
+require('ggmap')
 
 # Epidemiology Module
 # This module contains the different functions and procedures to recreate the results from the publication: MISSING_CITATION.
@@ -110,6 +111,44 @@ get_filter_dimension = function(one_squeleton_result)
   }
 }
 
+# plot_1_esqueleton
+#' Plots the given 1 Squeleton. The sizes of the nodes are proportional to the amount of elements they group.
+#' @param one_squeleton_result A one_squeleton object to plot
+#' @param layout The layout. This can either be a two column matrix with the x and y coordinates of each node of the 1 squeleton or the string 'grid' that calculates the layout using the method: construct_grid_graph_layout.
+#' @param min_node_size Minimum node size. Default is 3.
+#' @param max_node_size Maximum node size. Default is 23.
+plot_1_esqueleton = function(one_squeleton_result, layout = 'grid', min_node_size = 3, max_node_size = 23)
+{
+ 
+  # Constructs Layout
+  if(is.character(layout) & length(layout) == 1)
+  {
+    if(toupper(layout) == 'GRID')
+      final_layout = construct_grid_graph_layout(one_squeleton_result)
+    else
+      stop(paste('Unsupported layout option:', layout))
+  }
+  else
+    final_layout = layout
+  
+  # Constructs the graph
+  g = convert_to_graph(one_squeleton_result)
+  
+  # Adjust the sizes
+  node_size = get_1_esqueleton_node_sizes(one_squeleton_result)
+  if(min(node_size) == max(node_size))
+  {
+    print('All nodes are the same size. Assuming minimum for all.')
+    final_size = rep(3,length(node_size))
+  }
+  else
+    final_size = 20*(node_size- min(node_size))/(max(node_size) - min(node_size)) + 3
+  
+  V(g)$size = final_size
+
+  plot(g, layout = final_layout)
+  
+}
 
 #' ----------------------------------
 #' -- Point Intersection Network-----
@@ -128,11 +167,11 @@ extract_intersection_centrality = function(one_squeleton_result)
 }
 
 
-# create_point_intersection_network
+# create_point_intersection_adjacency
 #' Constructs the Point Intersection Network as described in MISSING_CITATION.
 #' @param one_squeleton_result A one_squeleton object to construct the network
 #' @return The corresponding adjacency matrix for the point intersection network
-create_point_intersection_network = function(one_squeleton_result)
+create_point_intersection_adjacency = function(one_squeleton_result)
 {
   # Computes centrality
   centrality = extract_intersection_centrality(one_squeleton_result)
@@ -163,22 +202,101 @@ create_point_intersection_network = function(one_squeleton_result)
 
 }
 
+# create_point_intersection_network
+#' Constructs the Point Intersection Network as described in MISSING_CITATION.
+#' @param one_squeleton_result A one_squeleton object to construct the network
+#' @return An igraph element with the point intersection network
+create_point_intersection_network = function(one_squeleton_result)
+{
+  adjacency = create_point_intersection_adjacency(one_squeleton_result)
+  pin = graph.adjacency(adjacency, mode = 'directed')
+  
+  # Sets the default parameters
+  V(pin)$label = NA
+  V(pin)$color = rgb(0.2,0,1,0.3) # Lighblue
+  V(pin)$size = 1 + sqrt(2*degree(pin, v = V(pin), mode = "in"))
+  
+  return(pin)
+  
+}
 
+# plot_intersection_network
+# TODO: Include size and groups
+# TODO: Que se vea bonito (tal vez mirar layouts)
+#' Plots the point intersection network
+#' @param one_squeleton_result A one_squeleton object to construct the network
+plot_intersection_network = function(one_squeleton_result)
+{
+  plot(create_point_intersection_network(one_squeleton_result))
+}
 
+# plot_intersection_network_over_map
+# TODO: Include size and groups. And noise (description)
+# TODO: include scenario where lat and lons are the same
+# TODO: allow subset of indices to be paseed
+#' Plots the point intersection network with geographical coordinates over map
+#' @param one_squeleton_result A one_squeleton object to construct the network
+#' @param lon A vector with the longitude coordinates (in decimal notation) of the points
+#' @param lat A vector with the latitude coordinates (in decimal notation) of the points
+#' @param groups A vector with the corresponding groups of the elements. 
 
-# TODO: Remove FOr Loop
-# plot_point_intersection_network
-#' Plots the point intersection network with geographical coordinates
-#' @param adj_matrix The adjacency matrix of the point intersection network
+plot_intersection_network_over_map = function(one_squeleton_result, lon, lat, groups = NULL, noise = 1)
+{
+  
+
+  # Adds noise to the coordinates So little overlap is obtained
+  # lon
+  lon_eps = abs((noise/100)*(max(lon) - min(lon)))
+  final_lon  = lon + runif(length(lon), -1*lon_eps, lon_eps)
+  # lat
+  lat_eps = abs((noise/100)*(max(lat) - min(lat)))
+  final_lat  = lat + runif(length(lat), -1*lat_eps, lat_eps)
+  
+  # Gets the elements for ploting
+  elements = create_plot_elements_for_point_intersection_network(one_squeleton_result, lon = lon, lat = lat)
+  data_points = elements[[1]]
+  data_segments = elements[[2]]
+  
+  # Gets the sizes
+  # TODO: creates sizes depending on the zoom
+  size = rep(3, length(lat))
+  
+  # Gets the map
+  # Calculates the square
+  radius = max( max(final_lon) - min(final_lon), max(final_lat) - min(final_lat))/2
+  mid_lon = min(final_lon) + (max(final_lon) - min(final_lon))/2
+  mid_lat = min(final_lat) + (max(final_lat) - min(final_lat))/2
+  
+  margin = 0.05
+  left = (mid_lon - radius) - radius*margin
+  right = (mid_lon + radius) + radius*margin
+  top = (mid_lat + radius) + radius*margin
+  bottom = (mid_lat - radius) - radius*margin
+  
+  map = get_map(c(left = left, bottom = bottom, right = right, top =top), maptype = 'terrain')
+  
+
+  p =  ggmap(map) + geom_point(data = data_points, aes(x = lon, y = lat, color = meta_df$country), size = size) +
+    geom_segment(data = data_segments, aes(x = x1, y = y1, xend = x2, yend = y2), color = "yellow", size = 0.15, arrow = arrow(length = unit(0.03, "npc")))
+  
+  plot(p)
+}
+
+# TODO: Remove For Loop
+# create_plot_elements_for_point_intersection_network
+#' Creates the elements to plot the point intersection network with geographical coordinates
+#' @param one_squeleton_result A one_squeleton object to construct the network
 #' @param lon A vector with the longitude coordinates (in decimal notation) of the points
 #' @param lat A vector with the latitude coordinates (in decimal notation) of the points
 #' @return a tuple with the following values
 #'   - Points (DataFrame): Where x is lon and y is latitude
 #'   - Arrows (DataFrame): where x1, x2 are the longitude of the start and finish of the arrows and y1,y2 the latitudes
-plot_point_intersection_network = function(adj_matrix, lon, lat)
+create_plot_elements_for_point_intersection_network = function(one_squeleton_result, lon, lat)
 {
+  # Extracts adjacency
+  adj_matrix = create_point_intersection_adjacency(one_squeleton_result)
   # Constructs the arrows
-  # Sorry for the for
+  # Sorry for the loop
   org = c()
   dest = c()
   for(i in 1:nrow(adj_matrix))
@@ -200,7 +318,8 @@ plot_point_intersection_network = function(adj_matrix, lon, lat)
   # FInish
   x2 = lon[dest]
   y2 = lat[dest]
-
+  
+  # Constructs the response scheme
   response = list()
   response[[1]] = data.frame(lon = lon, lat = lat)
   response[[2]] = data.frame(x1 = x1, y1 = y1, x2 = x2, y2 = y2)

@@ -67,6 +67,9 @@ mapperKD = function(k,
   # Parameter consistency check
   # --------------------
   # Filter
+  if(is.null(filter) | is.na(filter))
+    stop('Filter cannot be NULL')
+  
   if(!is.matrix(filter))
   {
     #If supplied filter space is a one dimensional vector, it's transformed into a n x 1 matrix
@@ -83,6 +86,9 @@ mapperKD = function(k,
     stop('Sample needs at least two points to work.')
 
   # Intervals
+  if(is.null(intervals) | is.na(intervals))
+    stop('Intervals cannot be NULL')
+  
   if(k != 1 && length(intervals) == 1)
   {
     print('The vector of intervals has dimension 1. Assuming its value for all dimensions of the filter space')
@@ -97,6 +103,9 @@ mapperKD = function(k,
 
 
   # Overlap
+  if(is.null(overlap) | is.na(overlap))
+    stop('Overlap cannot be NULL')
+  
   if(k != 1 && length(overlap) == 1)
   {
     print('The vector of overlap has dimension 1. Assuming its value for all dimensions of the filter space')
@@ -106,9 +115,12 @@ mapperKD = function(k,
   if(length(overlap) != k )
     stop(paste('Expected a',k,'dimensional vector for the overlap parameter but got a',length(intervals),'dimensional vector instead'))
 
-  if(any(intervals < 0) || any(intervals > 100))
+  if(any(intervals < 0) | any(intervals > 100))
     stop('All interval values must have values between 0 and a 100.')
 
+  # Distance
+  if(is.null(distance) | is.na(distance))
+    stop('Distance cannot be NULL')
 
   if(local_distance && missing(data))
     stop('local_distance is set to TRUE, so the data parameter must be supplied.')
