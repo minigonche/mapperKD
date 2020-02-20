@@ -46,3 +46,16 @@ plot_intersection_network(one_squeleton_result, groups = groups, max_node_size =
 ```
 
 ![output_sample_points](img/pin.png)
+
+Plots the PIN over the geographical coordinates, focusing on the samples in Colombia
+
+```{r }
+# Plot intersection network over colombia
+only_colombia =  (1:dim(meta_df)[1])[meta_df$lon < - 70]
+plot_intersection_network_over_map(one_squeleton_result, 
+                                   lon  = meta_df$lon, 
+                                   lat = meta_df$lat, 
+                                   groups = groups,
+                                   focus_on = only_colombia)
+```
+![output_sample_points](img/pin_geo.png)
