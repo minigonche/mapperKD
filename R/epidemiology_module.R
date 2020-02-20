@@ -248,6 +248,7 @@ plot_intersection_network = function(one_squeleton_result, groups = NULL, min_no
   # If group is not null, recolors the graph
   if(!is.null(groups))
   {
+    groups = as.vector(sapply(groups, toString))
     unique_groups = sort(unique(groups))
     # Creates the colors
     # Emulates ggplot. This is done so that this graph and the one over the map have the same colors
@@ -302,7 +303,7 @@ plot_intersection_network_over_map = function(one_squeleton_result,
   
   # If groups is not null. Changes the values to string
   if(!is.null(groups))
-    groups = sapply(groups, toString)
+    groups = as.vector(sapply(groups, toString))
   
   # If focus on is given, noie is done looking only at the filtered values
   if(!is.null(focus_on))
