@@ -203,40 +203,48 @@ mapperKD = function(k,
     interval_indices = which(logical_interval_indices)
 
 
-    # Excecutes the clustering scheme
+    # Excecutes the clustering scheme (if there is more than one element in the interval)
     # ------------------------
-    if(!local_distance) # Global distance
+    if(length(interval_indices) > 0)
     {
-      # -Extracts the current matrix
-      current_matrix = distance[interval_indices,interval_indices]
-
-      # Excecutes the clustering algorithm
-      clusters_of_interval = clustering_method(current_matrix)
+      
+        if(length(interval_indices) == 1) # Single point
+        {
+          clusters_of_interval = 1
+        }
+        else if(!local_distance) # Global distance
+        {
+          # -Extracts the current matrix
+          current_matrix = distance[interval_indices,interval_indices]
+    
+          # Excecutes the clustering algorithm
+          clusters_of_interval = clustering_method(current_matrix)
+        }
+        else # Local distance
+        {
+          # Filters the data
+          current_data = data[interval_indices,]
+          # Excecutes the clustering algorithm
+          clusters_of_interval = clustering_method(current_data)
+        }
+    
+    
+    
+        # Constructs the nodes and adds them to the nodes_per_interval array
+        #   Adjust the indices of the clusters to correpond with the nodes
+        clusters_of_interval = clusters_of_interval + length(elements_in_node)
+    
+        #   Adds them to the nodes_per_interval variable
+        nodes_per_interval[[coordinates]] = unique(clusters_of_interval)
+    
+        #   Adds the indices to the elements_in_node variable
+        for(node in clusters_of_interval)
+          elements_in_node[[node]] = interval_indices[clusters_of_interval == node]
+    
+        # Adds all the points to the npoint_per_interval
+        points_per_interval[[coordinates]] = interval_indices
     }
-    else # Local distance
-    {
-      # Filters the data
-      current_data = data[interval_indices,]
-      # Excecutes the clustering algorithm
-      clusters_of_interval = clustering_method(current_data)
-    }
-
-
-
-    # Constructs the nodes and adds them to the nodes_per_interval array
-    #   Adjust the indices of the clusters to correpond with the nodes
-    clusters_of_interval = clusters_of_interval + length(elements_in_node)
-
-    #   Adds them to the nodes_per_interval variable
-    nodes_per_interval[[coordinates]] = unique(clusters_of_interval)
-
-    #   Adds the indices to the elements_in_node variable
-    for(node in clusters_of_interval)
-      elements_in_node[[node]] = interval_indices[clusters_of_interval == node]
-
-    # Adds all the points to the npoint_per_interval
-    points_per_interval[[coordinates]] = interval_indices
-
+    
     # Stop criteria
     # Finished the last interval
     if(all(coordinates == intervals))

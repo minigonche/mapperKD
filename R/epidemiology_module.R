@@ -266,7 +266,7 @@ plot_intersection_network = function(one_squeleton_result, groups = NULL, min_no
 
   
   # Creates the plot
-  plot(pin, edge.arrow.size = 0.2)
+  plot(pin, edge.arrow.size = 0.2, layout = layout_nicely(pin))
   
   # If groups where given, legend is included
   if(!is.null(groups))
@@ -299,6 +299,10 @@ plot_intersection_network_over_map = function(one_squeleton_result,
   
   if(max(lon) == min(lon) && max(lat) == min(lat) && noise == 0 )
     stop("All points have the same coordinates, noise must be greater than 0 to plot (or else it's simply one point)")
+  
+  # If groups is not null. Changes the values to string
+  if(!is.null(groups))
+    groups = sapply(groups, toString)
   
   # If focus on is given, noie is done looking only at the filtered values
   if(!is.null(focus_on))
