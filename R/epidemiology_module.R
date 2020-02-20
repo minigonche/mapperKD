@@ -1,6 +1,6 @@
-require('ggplot2')
-require('igraph')
-require('ggmap')
+library('ggplot2')
+library('igraph')
+library('ggmap')
 
 # Epidemiology Module
 # This module contains the different functions and procedures to recreate the results from the publication: MISSING_CITATION.

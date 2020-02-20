@@ -1,4 +1,4 @@
-require('sets')
+library('sets')
 
 #' Implementation of the mapper algorithm described in:
 #'

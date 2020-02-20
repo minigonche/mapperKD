@@ -42,6 +42,7 @@ plot_1_esqueleton(one_squeleton_result)
 With the epidemiology module, the PIN can be constructed and ploted directly from the mapper result
 ```{r }
 # Plots the point intersection network
+groups = sapply(meta_df$GROUP, toString)
 plot_intersection_network(one_squeleton_result, groups = groups, max_node_size = 6)
 ```
 
