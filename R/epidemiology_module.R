@@ -119,7 +119,10 @@ get_filter_dimension = function(one_squeleton_result)
 #' @param max_node_size Maximum node size. Default is 23.
 plot_1_esqueleton = function(one_squeleton_result, layout = 'grid', min_node_size = 3, max_node_size = 23)
 {
- 
+
+  # Constructs the graph
+  g = convert_to_graph(one_squeleton_result)
+
   # Constructs Layout
   if(is.character(layout) & length(layout) == 1)
   {
@@ -130,10 +133,7 @@ plot_1_esqueleton = function(one_squeleton_result, layout = 'grid', min_node_siz
   }
   else
     final_layout = layout
-  
-  # Constructs the graph
-  g = convert_to_graph(one_squeleton_result)
-  
+
   # Adjust the sizes
   node_size = get_1_esqueleton_node_sizes(one_squeleton_result)
   if(min(node_size) == max(node_size))
@@ -143,11 +143,11 @@ plot_1_esqueleton = function(one_squeleton_result, layout = 'grid', min_node_siz
   }
   else
     final_size = (max_node_size - min_node_size)*(node_size- min(node_size))/(max(node_size) - min(node_size)) + min_node_size
-  
+
   V(g)$size = final_size
 
   plot(g, layout = final_layout)
-  
+
 }
 
 #' ----------------------------------
@@ -210,14 +210,14 @@ create_point_intersection_network = function(one_squeleton_result)
 {
   adjacency = create_point_intersection_adjacency(one_squeleton_result)
   pin = graph.adjacency(adjacency, mode = 'directed')
-  
+
   # Sets the default parameters
   V(pin)$label = NA
   V(pin)$color = rgb(0.2,0,1,0.3) # Lighblue
   V(pin)$size = degree(pin, v = V(pin), mode = "in")
-  
+
   return(pin)
-  
+
 }
 
 # plot_intersection_network
@@ -229,10 +229,10 @@ plot_intersection_network = function(one_squeleton_result, groups = NULL, min_no
 {
   # Creates the network
   pin = create_point_intersection_network(one_squeleton_result)
-  
+
   # Adjusts sizes
   node_size = V(pin)$size
-  
+
   if(min(node_size) == max(node_size))
   {
     print('All nodes are the same size. Assuming minimum for all.')
@@ -240,11 +240,11 @@ plot_intersection_network = function(one_squeleton_result, groups = NULL, min_no
   }
   else
     final_size = (max_node_size - min_node_size)*(node_size- min(node_size))/(max(node_size) - min(node_size)) + min_node_size
-  
+
   # Sets final size
   V(pin)$size = final_size
-  
-  
+
+
   # If group is not null, recolors the graph
   if(!is.null(groups))
   {
@@ -255,25 +255,25 @@ plot_intersection_network = function(one_squeleton_result, groups = NULL, min_no
     n = length(unique_groups)
     hues = seq(15, 375, length = n + 1)
     colors = hcl(h = hues, l = 65, c = 100)[1:n]
-    
+
     # Finds the color for each group
     index = as.vector(sapply(groups, function(g){match(g,unique_groups)}))
     final_colors = colors[index]
-    
+
     # Assigns the color
     V(pin)$color = final_colors
-    
+
   }
 
-  
+
   # Creates the plot
   plot(pin, edge.arrow.size = 0.2, layout = layout_nicely(pin))
-  
+
   # If groups where given, legend is included
   if(!is.null(groups))
     legend("topleft", legend=unique_groups, fill = colors, title="Groups")
-  
-  
+
+
 }
 
 # plot_intersection_network_over_map
@@ -285,26 +285,26 @@ plot_intersection_network = function(one_squeleton_result, groups = NULL, min_no
 #' @param groups A vector with the corresponding groups of the elements. This group identification will be used for coloring.
 #' @param min_node_size Minimum node size. Default is 1.
 #' @param max_node_size Maximum node size. Default is 5.
-#' @param noise Indicates the percentage of noise to add to the coordinates to avoid overlapping in the map. Must be a value between 0 and 100, correspondig to the percentage of the radius of the map to include as noise (default is 1) 
+#' @param noise Indicates the percentage of noise to add to the coordinates to avoid overlapping in the map. Must be a value between 0 and 100, correspondig to the percentage of the radius of the map to include as noise (default is 1)
 #' @param focus_on Vecotr of indices indicating the samples that the map should focus on. This works like a zoom, focusing on the given samples. If NULL, all elements are taking inito account. NOTE: if provided, the map will output a warning for all of the points outside the scope of the focus_on.
 
-plot_intersection_network_over_map = function(one_squeleton_result, 
-                                              lon, 
-                                              lat, 
+plot_intersection_network_over_map = function(one_squeleton_result,
+                                              lon,
+                                              lat,
                                               groups = NULL,
                                               min_node_size = 1,
                                               max_node_size = 5,
                                               noise = 1,
                                               focus_on = NULL)
 {
-  
+
   if(max(lon) == min(lon) && max(lat) == min(lat) && noise == 0 )
     stop("All points have the same coordinates, noise must be greater than 0 to plot (or else it's simply one point)")
-  
+
   # If groups is not null. Changes the values to string
   if(!is.null(groups))
     groups = as.vector(sapply(groups, toString))
-  
+
   # If focus on is given, noie is done looking only at the filtered values
   if(!is.null(focus_on))
   {
@@ -316,24 +316,24 @@ plot_intersection_network_over_map = function(one_squeleton_result,
     lon_eps = abs((noise/100)*(max(lon) - min(lon)))
     lat_eps = abs((noise/100)*(max(lat) - min(lat)))
   }
-  
+
   # Adds noise to the coordinates So little overlap is obtained
   # lon
   final_lon  = lon + runif(length(lon), -1*lon_eps, lon_eps)
   # lat
   final_lat  = lat + runif(length(lat), -1*lat_eps, lat_eps)
-  
+
   # Gets the elements for ploting
   elements = create_plot_elements_for_point_intersection_network(one_squeleton_result, lon = final_lon, lat = final_lat)
   data_points = elements[[1]]
   data_segments = elements[[2]]
-  
+
 
   # Adjust the sizes
   # Extracts the size from the pin network (in degree)
   pin = create_point_intersection_network(one_squeleton_result)
   node_size = V(pin)$size
-  
+
   if(min(node_size) == max(node_size))
   {
     print('All nodes are the same size. Assuming minimum for all.')
@@ -341,9 +341,9 @@ plot_intersection_network_over_map = function(one_squeleton_result,
   }
   else
     final_size = (max_node_size - min_node_size)*(node_size- min(node_size))/(max(node_size) - min(node_size)) + min_node_size
-  
-  
-  
+
+
+
   # Gets the map
   # If focus on is given, filters out the other sammples
   if(!is.null(focus_on))
@@ -351,26 +351,26 @@ plot_intersection_network_over_map = function(one_squeleton_result,
     final_lon = final_lon[focus_on]
     final_lat = final_lat[focus_on]
   }
-  
+
   # Calculates the square
   radius = max( max(final_lon) - min(final_lon), max(final_lat) - min(final_lat))/2
   mid_lon = min(final_lon) + (max(final_lon) - min(final_lon))/2
   mid_lat = min(final_lat) + (max(final_lat) - min(final_lat))/2
-  
+
   # Adds margin
   margin = 0.05
   left = (mid_lon - radius) - radius*margin
   right = (mid_lon + radius) + radius*margin
   top = (mid_lat + radius) + radius*margin
   bottom = (mid_lat - radius) - radius*margin
-  
+
   # Extracts the map
   map = get_map(c(left = left, bottom = bottom, right = right, top =top), maptype = 'satellite')
-  
+
   # Constructs the plot
   p =  ggmap(map) + geom_point(data = data_points, aes(x = lon, y = lat, color = groups), size = final_size) +
     geom_segment(data = data_segments, aes(x = x1, y = y1, xend = x2, yend = y2), color = "white", size = 0.12, arrow = arrow(length = unit(0.015, "npc")))
-  
+
   plot(p)
 }
 
@@ -410,7 +410,7 @@ create_plot_elements_for_point_intersection_network = function(one_squeleton_res
   # FInish
   x2 = lon[dest]
   y2 = lat[dest]
-  
+
   # Constructs the response scheme
   response = list()
   response[[1]] = data.frame(lon = lon, lat = lat)

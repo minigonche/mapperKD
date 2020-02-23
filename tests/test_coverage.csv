@@ -1,0 +1,19 @@
+script_name,method,type,case,has_test,location_of_test,general_comments
+mapperKD_functions.R,mapperKD,error_scenarios,,PARTIAL,test_maperkd_unit.R,Several of the error scenario cases. Missing some of the scenarios.
+mapperKD_functions.R,mapperKD,complete,clique,PARTIAL,test_maperkd.R,"Creates random clique scenarios, includgin high overlapping widows and random overlap but with single value filter"
+mapperKD_functions.R,mapperKD,complete,circle 1d,PARTIAL,test_maperkd.R,Selected circle over 1 dimension. Missing different cluster functions
+mapperKD_functions.R,mapperKD,complete,circle 2d,PARTIAL,test_maperkd.R,Selected circle over 2 dimension. Missing different cluster functions
+mapperKD_functions.R,advance_coordinates,complete,,YES,test_maperkd_unit.R,4 selected cases
+mapperKD_functions.R,construct_step_grid,complete,,YES,test_maperkd_unit.R,"Several selected and random cases for 1,2 and n dimensions"
+cluster_functions.R,hierarchical_clustering,complete,,NO,,
+epidemiology_module.R,convert_to_graph,complete,,NO,,
+epidemiology_module.R,get_1_esqueleton_node_sizes,complete,,NO,,
+epidemiology_module.R,construct_grid_graph_layout,complete,,NO,,
+epidemiology_module.R,get_filter_dimension,complete,,NO,,
+epidemiology_module.R,plot_1_esqueleton,complete,,NO,,
+epidemiology_module.R,extract_intersection_centrality,complete,,NO,,
+epidemiology_module.R,create_point_intersection_adjacency,complete,,NO,,
+epidemiology_module.R,create_point_intersection_network,complete,,NO,,
+epidemiology_module.R,plot_intersection_network,complete,,NO,,
+epidemiology_module.R,plot_intersection_network_over_map,complete,,NO,,
+epidemiology_module.R,create_plot_elements_for_point_intersection_network,complete,,NO,,

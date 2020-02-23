@@ -4,7 +4,7 @@
 #' try to isolate different sections of the algorithm (and any support methods)
 
 # Size of test
-percetange_of_test = 0.1
+percetange_of_test = 1
 
 context("MapperKD Unit Tests. Support Functions. Advance Coordinates")
 

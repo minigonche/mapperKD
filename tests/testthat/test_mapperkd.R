@@ -4,7 +4,7 @@ require('igraph')
 #' Mapper Tests
 
 # Size of test
-percetange_of_test = 0.1
+percetange_of_test = 1
 
 
 # Support Funtion
@@ -47,19 +47,6 @@ test_that("Toy Examples. 1 Dimension", {
     intervals = sample(2:10, 1)
     overlap = sample(1:99, 1)
 
-
-    #print('Values')
-    #print(num_points)
-    #print(filter)
-    #print(intervals)
-    #print(overlap)
-    #print('')
-
-    num_points = 5
-    filter = rep(1,num_points)
-    intervals = 4
-    overlap = 85
-
     res = mapperKD(k = 1,
                    distance = matrix(rep(1,length(filter)**2), ncol = length(filter)),
                    filter = filter,
@@ -73,6 +60,31 @@ test_that("Toy Examples. 1 Dimension", {
     for(lev in res$points_in_nodes)
       expect_equal( length(lev), num_points )
 
+    expect_equal( sum(res$adjacency_matrix), res$num_nodes**2 - res$num_nodes )
+
+  }
+
+  # Two extree point and random in the middle. With overlap above 95% should be clique
+  num_ite = 100*percetange_of_test
+  for(i in 1:num_ite)
+  {
+    num_points = 2 + sample(2:10, 1)
+    filter = c(0, rep(1,num_points -2), 2)
+    intervals = sample(2:10, 1)
+    overlap = sample(95:99, 1)
+
+    res = mapperKD(k = 1,
+                   distance = matrix(rep(1,length(filter)**2), ncol = length(filter)),
+                   filter = filter,
+                   intervals = intervals,
+                   overlap = overlap,
+                   clustering_method = cluster_all,
+                   local_distance = FALSE,
+                   data = NA)
+
+    # Every interval has a point
+    expect_equal( res$num_nodes, intervals )
+    # Is clique
     expect_equal( sum(res$adjacency_matrix), res$num_nodes**2 - res$num_nodes )
 
   }

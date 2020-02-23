@@ -69,7 +69,7 @@ mapperKD = function(k,
   # Filter
   if(is.null(filter) || is.na(filter))
     stop('Filter cannot be NULL')
-  
+
   if(!is.matrix(filter))
   {
     #If supplied filter space is a one dimensional vector, it's transformed into a n x 1 matrix
@@ -88,7 +88,7 @@ mapperKD = function(k,
   # Intervals
   if(is.null(intervals) || is.na(intervals))
     stop('Intervals cannot be NULL')
-  
+
   if(k != 1 && length(intervals) == 1)
   {
     print('The vector of intervals has dimension 1. Assuming its value for all dimensions of the filter space')
@@ -105,7 +105,7 @@ mapperKD = function(k,
   # Overlap
   if(is.null(overlap) || is.na(overlap))
     stop('Overlap cannot be NULL')
-  
+
   if(k != 1 && length(overlap) == 1)
   {
     print('The vector of overlap has dimension 1. Assuming its value for all dimensions of the filter space')
@@ -150,7 +150,6 @@ mapperKD = function(k,
   # Step size
   step_size = window_size*(1 - overlap/100)
 
-
   # Initializes the output parameters
 
   # Initializes the nodes_per_interval variable
@@ -186,8 +185,11 @@ mapperKD = function(k,
     #   Extracts the interval's current max and min values
     interval_min = filter_min + (coordinates - 1)*step_size
     interval_max = interval_min + window_size
+
     #   For of numeric precision, the max filter value for the las intervals in each dimension are forced to be the filter's max value on the correponding dimension
+    #   Same scneario when the window size is zero (which should include the whole interval in the given dimension)
     interval_max[coordinates == intervals] = filter_max[coordinates == intervals]
+    interval_max[window_size == 0] = filter_max[window_size == 0]
 
 
     #   Gets the indices of the samples that fall on the current interval
@@ -207,7 +209,7 @@ mapperKD = function(k,
     # ------------------------
     if(length(interval_indices) > 0)
     {
-      
+
         if(length(interval_indices) == 1) # Single point
         {
           clusters_of_interval = 1
@@ -216,7 +218,7 @@ mapperKD = function(k,
         {
           # -Extracts the current matrix
           current_matrix = distance[interval_indices,interval_indices]
-    
+
           # Excecutes the clustering algorithm
           clusters_of_interval = clustering_method(current_matrix)
         }
@@ -227,24 +229,24 @@ mapperKD = function(k,
           # Excecutes the clustering algorithm
           clusters_of_interval = clustering_method(current_data)
         }
-    
-    
-    
+
+
+
         # Constructs the nodes and adds them to the nodes_per_interval array
         #   Adjust the indices of the clusters to correpond with the nodes
         clusters_of_interval = clusters_of_interval + length(elements_in_node)
-    
+
         #   Adds them to the nodes_per_interval variable
         nodes_per_interval[[coordinates]] = unique(clusters_of_interval)
-    
+
         #   Adds the indices to the elements_in_node variable
         for(node in clusters_of_interval)
           elements_in_node[[node]] = interval_indices[clusters_of_interval == node]
-    
+
         # Adds all the points to the npoint_per_interval
         points_per_interval[[coordinates]] = interval_indices
     }
-    
+
     # Stop criteria
     # Finished the last interval
     if(all(coordinates == intervals))
@@ -299,6 +301,7 @@ mapperKD = function(k,
     # Calculates possible coordinates
     possible_coordinates = sweep(step_grid, 2, coordinates, "+")
 
+    # Removes thes ones that exceed the mas size
     possible_indices = rowSums(sweep(possible_coordinates, 2, intervals, FUN = "<=")) == k
     possible_coordinates = matrix(possible_coordinates[possible_indices,], nrow = sum(possible_indices), ncol = k)
 
@@ -384,6 +387,9 @@ construct_step_grid = function(filter_min, filter_max, intervals, overlap)
   max_search_posibilities = ceiling(1/(1 - overlap/100)) - 1
   max_search_posibilities = pmin(max_search_posibilities, intervals) # Should not check further than the total amount of intervals
 
+  # If window_size is equal to zero, then the amount of overlap has no efect and should check all intervals in every iteration.
+  max_search_posibilities[window_size == 0] = intervals[window_size == 0]
+
   # Creates the search possibilities
   search_possibilities = lapply(1:length(intervals), function(i){0:max_search_posibilities[i]})
 
@@ -393,6 +399,7 @@ construct_step_grid = function(filter_min, filter_max, intervals, overlap)
 
   #   Removes itself from the possible steps
   step_grid = as.matrix(step_grid[rowSums(step_grid) > 0,])
+
 
   return(step_grid)
 }
