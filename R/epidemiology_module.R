@@ -267,11 +267,14 @@ plot_intersection_network = function(one_squeleton_result, groups = NULL, min_no
 
 
   # Creates the plot
-  plot(pin, edge.arrow.size = 0.2, layout = layout_nicely(pin))
+  layout = layout_nicely(pin)
+  plot(pin, edge.arrow.size = 0.2, layout = layout)
+
 
   # If groups where given, legend is included
   if(!is.null(groups))
-    legend("topleft", legend=unique_groups, fill = colors, title="Groups")
+    op <- par(cex = 0.7)
+    legend('topleft', legend=unique_groups, fill = colors, title="Groups")
 
 
 }
@@ -323,6 +326,7 @@ plot_intersection_network_over_map = function(one_squeleton_result,
   # lat
   final_lat  = lat + runif(length(lat), -1*lat_eps, lat_eps)
 
+
   # Gets the elements for ploting
   elements = create_plot_elements_for_point_intersection_network(one_squeleton_result, lon = final_lon, lat = final_lat)
   data_points = elements[[1]]
@@ -359,10 +363,10 @@ plot_intersection_network_over_map = function(one_squeleton_result,
 
   # Adds margin
   margin = 0.05
-  left = (mid_lon - radius) - radius*margin
-  right = (mid_lon + radius) + radius*margin
-  top = (mid_lat + radius) + radius*margin
-  bottom = (mid_lat - radius) - radius*margin
+  left = max((mid_lon - radius) - radius*margin, -170)
+  right = min((mid_lon + radius) + radius*margin, 170)
+  top = min((mid_lat + radius) + radius*margin, 70)
+  bottom = max((mid_lat - radius) - radius*margin, -70)
 
   # Extracts the map
   map = get_map(c(left = left, bottom = bottom, right = right, top =top), maptype = 'satellite')
