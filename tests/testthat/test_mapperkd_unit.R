@@ -69,7 +69,7 @@ test_that("Unit Tests for: Construct Step Grid. Dimension 1", {
   overlap = 30
 
   step_grid = construct_step_grid(filter_min, filter_max, intervals, overlap)
-  res = mapperKD(k = 1, distance = matrix(rep(1,length(filter)**2), ncol = length(filter)), filter = filter, intervals = intervals, overlap = overlap, clustering_method = cluster_all, local_distance = FALSE, data = NA)
+  res = mapperKD(k = 1, distance = matrix(rep(1,length(filter)**2), ncol = length(filter)), filter = filter, intervals = intervals, overlap = overlap, clustering_method = cluster_all)
 
   # Complete grid
   grid = as.matrix(expand.grid(lapply(intervals, function(i){1:i})))
@@ -113,7 +113,7 @@ test_that("Unit Tests for: Construct Step Grid. Dimension 1", {
     overlap = sample(1:99, 1)
 
     step_grid = construct_step_grid(filter_min, filter_max, intervals, overlap)
-    res = mapperKD(k = 1, distance = matrix(rep(1,length(filter)**2), ncol = length(filter)), filter = filter, intervals = intervals, overlap = overlap, clustering_method = cluster_all, local_distance = FALSE, data = NA)
+    res = mapperKD(k = 1, distance = matrix(rep(1,length(filter)**2), ncol = length(filter)), filter = filter, intervals = intervals, overlap = overlap, clustering_method = cluster_all)
 
     # Complete grid
     grid = as.matrix(expand.grid(lapply(intervals, function(i){1:i})))
@@ -168,7 +168,7 @@ test_that("Unit Tests for: Construct Step Grid. Dimesnion 2", {
   overlap = c(30,55)
 
   step_grid = construct_step_grid(filter_min, filter_max, intervals, overlap)
-  res = mapperKD(k = 2, distance = matrix(rep(1,dim(filter)[1]**2), ncol = dim(filter)[1]), filter = filter, intervals = intervals, overlap = overlap, clustering_method = cluster_all, local_distance = FALSE, data = NA)
+  res = mapperKD(k = 2, distance = matrix(rep(1,dim(filter)[1]**2), ncol = dim(filter)[1]), filter = filter, intervals = intervals, overlap = overlap, clustering_method = cluster_all)
 
   # Complete grid
   grid = as.matrix(expand.grid(lapply(intervals, function(i){1:i})))
@@ -216,7 +216,7 @@ test_that("Unit Tests for: Construct Step Grid. Dimesnion 2", {
 
 
     step_grid = construct_step_grid(filter_min, filter_max, intervals, overlap)
-    res = mapperKD(k = 2, distance = matrix(rep(1,dim(filter)[1]**2), ncol = dim(filter)[1]), filter = filter, intervals = intervals, overlap = overlap, clustering_method = cluster_all, local_distance = FALSE, data = NA)
+    res = mapperKD(k = 2, distance = matrix(rep(1,dim(filter)[1]**2), ncol = dim(filter)[1]), filter = filter, intervals = intervals, overlap = overlap, clustering_method = cluster_all)
 
     # Complete grid
     grid = as.matrix(expand.grid(lapply(intervals, function(i){1:i})))
@@ -268,7 +268,7 @@ test_that("Unit Tests for: Construct Step Grid. Dimesnion n", {
   overlap = c(30,55, 70)
 
   step_grid = construct_step_grid(filter_min, filter_max, intervals, overlap)
-  res = mapperKD(k = 3, distance = matrix(rep(1,dim(filter)[1]**2), ncol = dim(filter)[1]), filter = filter, intervals = intervals, overlap = overlap, clustering_method = cluster_all, local_distance = FALSE, data = NA)
+  res = mapperKD(k = 3, distance = matrix(rep(1,dim(filter)[1]**2), ncol = dim(filter)[1]), filter = filter, intervals = intervals, overlap = overlap, clustering_method = cluster_all)
 
   # Complete grid
   grid = as.matrix(expand.grid(lapply(intervals, function(i){1:i})))
@@ -327,7 +327,7 @@ test_that("Unit Tests for: Construct Step Grid. Dimesnion n", {
 
 
     step_grid = construct_step_grid(filter_min, filter_max, intervals, overlap)
-    res = mapperKD(k = n, distance = matrix(rep(1,dim(filter)[1]**2), ncol = dim(filter)[1]), filter = filter, intervals = intervals, overlap = overlap, clustering_method = cluster_all, local_distance = FALSE, data = NA)
+    res = mapperKD(k = n, distance = matrix(rep(1,dim(filter)[1]**2), ncol = dim(filter)[1]), filter = filter, intervals = intervals, overlap = overlap, clustering_method = cluster_all)
 
     # Complete grid
     grid = as.matrix(expand.grid(lapply(intervals, function(i){1:i})))
@@ -372,15 +372,15 @@ test_that("MapperKD Unit Tests. Error Scenarios", {
   # Bad filter
   filter = c(1,2,3)
   # --- FIlter One dimensional OK (k = 1)
-  expect_true({mapperKD(k = 1, distance = matrix(rep(1,length(filter)**2), ncol = length(filter)), filter = filter, intervals = intervals, overlap = overlap, clustering_method = cluster_all, local_distance = FALSE, data = NA); TRUE})
+  expect_true({mapperKD(k = 1, distance = matrix(rep(1,length(filter)**2), ncol = length(filter)), filter = filter, intervals = intervals, overlap = overlap, clustering_method = cluster_all); TRUE})
   # --- FIlter One dimensional not OK (k != 1)
-  expect_error(mapperKD(k = 2, distance = matrix(rep(1,length(filter)**2), ncol = length(filter)), filter = filter, intervals = intervals, overlap = overlap, clustering_method = cluster_all, local_distance = FALSE, data = NA))
+  expect_error(mapperKD(k = 2, distance = matrix(rep(1,length(filter)**2), ncol = length(filter)), filter = filter, intervals = intervals, overlap = overlap, clustering_method = cluster_all))
   # --- FIlter two dimensional OK
   filter = cbind(c(1,2,3),c(4,5,6))
-  expect_true({mapperKD(k = 2, distance = matrix(rep(1,dim(filter)[1]**2), ncol = dim(filter)[1]), filter = filter, intervals = c(intervals,intervals), overlap = c(overlap,overlap), clustering_method = cluster_all, local_distance = FALSE, data = NA); TRUE})
+  expect_true({mapperKD(k = 2, distance = matrix(rep(1,dim(filter)[1]**2), ncol = dim(filter)[1]), filter = filter, intervals = c(intervals,intervals), overlap = c(overlap,overlap), clustering_method = cluster_all); TRUE})
   # --- FIlter two dimensional not OK
-  expect_error(mapperKD(k = 1, distance = matrix(rep(1,dim(filter)[1]**2), ncol = dim(filter)[1]), filter = filter, intervals = intervals, overlap = overlap, clustering_method = cluster_all, local_distance = FALSE, data = NA))
-  expect_error(mapperKD(k = 3, distance = matrix(rep(1,dim(filter)[1]**2), ncol = dim(filter)[1]), filter = filter, intervals = intervals, overlap = overlap, clustering_method = cluster_all, local_distance = FALSE, data = NA))
+  expect_error(mapperKD(k = 1, distance = matrix(rep(1,dim(filter)[1]**2), ncol = dim(filter)[1]), filter = filter, intervals = intervals, overlap = overlap, clustering_method = cluster_all))
+  expect_error(mapperKD(k = 3, distance = matrix(rep(1,dim(filter)[1]**2), ncol = dim(filter)[1]), filter = filter, intervals = intervals, overlap = overlap, clustering_method = cluster_all))
 
   # TODO: Finish
 })

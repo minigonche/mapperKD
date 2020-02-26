@@ -16,9 +16,8 @@ library('sets')
 #' @param filter an n x k matrix of the filter space values, where n corresponds to the number of observations and k to the filter space dimension.
 #' @param intervals a vector of k positive integers, the number of intervals for each correspong dimension of the filter space.
 #' @param overlap a vector of k numbers between 0 and 100, specifying how much adjacent intervals should overlap for each dimension of the filter space.
-#' @param clustering_method clustering method to be used for each pre-image. If the parameter \code{local_distance} is set to \code{TRUE}, the given funtion must receive as a parameter a distance matrix. If the parameter \code{local_distance} is set to \code{FALSE}, the given funtion must receive as a parameter a data.frame. In any case, it mus return an array with the corresiponding number cluster for each of the given points. Clusters numbers must start with 1 and have no gaps between them. Default is: hierarchical_clustering
+#' @param clustering_method clustering method to be used for each pre-image. If the parameter \code{local_distance} is set to \code{TRUE}, the given funtion must receive as a parameter a distance matrix. If the parameter \code{local_distance} is set to \code{FALSE}, the given funtion must receive as a parameter a list of indices (The indices of the corresponding interval). In any case, it mus return an array with the corresiponding number cluster for each of the given points. Clusters numbers must start with 1 and have no gaps between them. Default is: hierarchical_clustering
 #' @param local_distance a boolean indicating if the algorithm should construct the distance function based on the data at every pre-image. Usefull for low RAM enviorments or specific clustering. Default value is \code{FALSE}
-#' @param data a data frame containing the information necessary to excecute the clustering procedure. This parameter will only be used if \code{local_distance} is set to \code{TRUE}.
 #'
 #' @return An object of class \code{one_squeleton} which is composed of the following items:
 #'
@@ -42,13 +41,11 @@ library('sets')
 #'                                 filter = data_points$x,
 #'                                 intervals = c(12),
 #'                                 overlap = c(50),
-#'                                 clustering_method = hierarchical_clustering,
-#'                                 local_distance = FALSE,
-#'                                 data = NA)
+#'                                 clustering_method = hierarchical_clustering)
 #' # Visualize the result
 #' g = convert_to_graph(one_squeleton_result)
 #' V(g)$size = sqrt(get_1_esqueleton_node_sizes(one_squeleton_result)*30)
-#' splot(g)
+#' plot(g)
 #'
 #' @export
 #'
@@ -224,10 +221,8 @@ mapperKD = function(k,
         }
         else # Local distance
         {
-          # Filters the data
-          current_data = data[interval_indices,]
-          # Excecutes the clustering algorithm
-          clusters_of_interval = clustering_method(current_data)
+          # Excecutes the clustering algorithm with only the interval indices
+          clusters_of_interval = clustering_method(interval_indices)
         }
 
 

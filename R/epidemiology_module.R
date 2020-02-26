@@ -1,9 +1,10 @@
-library('ggplot2')
-library('igraph')
-library('ggmap')
+require('ggplot2')
+require('igraph')
+require('ggmap')
 
 # Epidemiology Module
 # This module contains the different functions and procedures to recreate the results from the publication: MISSING_CITATION.
+
 
 
 #' ----------------------------------
@@ -16,6 +17,7 @@ library('ggmap')
 #' @return A vector with the corresponding sizes
 convert_to_graph = function(one_squeleton_result)
 {
+
   # Creates the graph
   g = graph.adjacency(one_squeleton_result$adjacency_matrix, mode = 'undirected')
   # Sets colors and labels

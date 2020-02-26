@@ -52,9 +52,7 @@ test_that("Toy Examples. 1 Dimension", {
                    filter = filter,
                    intervals = intervals,
                    overlap = overlap,
-                   clustering_method = cluster_all,
-                   local_distance = FALSE,
-                   data = NA)
+                   clustering_method = cluster_all)
 
     expect_equal( res$num_nodes, intervals )
     for(lev in res$points_in_nodes)
@@ -78,9 +76,7 @@ test_that("Toy Examples. 1 Dimension", {
                    filter = filter,
                    intervals = intervals,
                    overlap = overlap,
-                   clustering_method = cluster_all,
-                   local_distance = FALSE,
-                   data = NA)
+                   clustering_method = cluster_all)
 
     # Every interval has a point
     expect_equal( res$num_nodes, intervals )
@@ -98,9 +94,7 @@ test_that("Toy Examples. 1 Dimension", {
                  filter = filter,
                  intervals = intervals,
                  overlap = overlap,
-                 clustering_method = cluster_all,
-                 local_distance = FALSE,
-                 data = NA)
+                 clustering_method = cluster_all)
 
   expect_equal( res$num_nodes, 2 )
   expect_equal( length(res$points_in_nodes[[1]]), 2 )
@@ -116,9 +110,7 @@ test_that("Toy Examples. 1 Dimension", {
                  filter = filter,
                  intervals = intervals,
                  overlap = overlap,
-                 clustering_method = cluster_all,
-                 local_distance = FALSE,
-                 data = NA)
+                 clustering_method = cluster_all)
 
   expect_equal( res$num_nodes, 2 )
   expect_equal( length(res$points_in_nodes[[1]]), 2 )
@@ -145,9 +137,7 @@ test_that("Toy Examples. 2 Dimension. Circle 2D", {
                  filter = filter,
                  intervals = intervals,
                  overlap = overlap,
-                 clustering_method = cluster_all,
-                 local_distance = FALSE,
-                 data = NA)
+                 clustering_method = cluster_all)
 
 
   expect_true(is_circle(res))
@@ -171,9 +161,7 @@ test_that("Toy Examples. 2 Dimension. Circle 1D", {
                  filter = filter,
                  intervals = intervals,
                  overlap = overlap,
-                 clustering_method = function(x){hierarchical_clustering(x,  method = 'single', height =-1)},
-                 local_distance = FALSE,
-                 data = NA)
+                 clustering_method = hierarchical_clustering)
 
 
   expect_true(is_circle(res))
@@ -190,9 +178,7 @@ test_that("Toy Examples. 2 Dimension. Circle 1D", {
                  filter = filter,
                  intervals = intervals,
                  overlap = overlap,
-                 clustering_method = function(x){hierarchical_clustering(x,  method = 'single', height =-1)},
-                 local_distance = FALSE,
-                 data = NA)
+                 clustering_method = hierarchical_clustering)
 
 
   expect_true(is_circle(res))

@@ -1,10 +1,16 @@
-#' Available clustering methods
+#' Available generalclustering methods
 #'
 #' The following script contains the different clustering schemes available to pass as the parameter: \code{clustering_method} to the
 #' main method. All the available functions should have the following structure (as well as any other function that is used as the mentioned parameter):
+#'
+#' NOTE: The clustering algorithms are used under two different schemes:
+#'    - local_distance = FALSE. When local distance is FALSE, the clustering algorithm preforms over the distance matrix of the complete dataset
+#'    - local_distance = TRUE. The clustering algorithm preforms only over the given indices, and not the complete data set. Therefore, the method should compute the clusters receving the indices as its only parameter.
+#'
 #' Function Structure:
 #'    Parameters:
 #'       distance_matrix: square symetric matrix with the distance between elements
+#'       current_indices: a vector with the current indices of the data to preform clustering.
 #'    Return:
 #'       numeric array: numeric array with the corresponding number of cluster each point belongs to (in the order of the distace matrix). Should start with 1 and have no gaps.
 #'
