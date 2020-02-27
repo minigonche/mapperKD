@@ -62,17 +62,15 @@ test_that("Unit Tests for: Construct Step Grid. Dimension 1", {
   # Case 1. n = 1.
   # Toy case
   N = 30
-  filter = runif(N, -100, 100)
-  filter_min = min(filter)
-  filter_max = max(filter)
-  intervals = 4
+  filter = matrix(runif(N, -100, 100), nrow = N, ncol = 1)
+  num_intervals = 4
   overlap = 30
 
-  step_grid = construct_step_grid(filter_min, filter_max, intervals, overlap)
-  res = mapperKD(k = 1, distance = matrix(rep(1,length(filter)**2), ncol = length(filter)), filter = filter, intervals = intervals, overlap = overlap, clustering_method = cluster_all)
+  step_grid = construct_fixed_step_grid(filter,  num_intervals, overlap)
+  res = mapperKD(k = 1, distance = matrix(rep(1,N**2), ncol = N), filter = filter, num_intervals = num_intervals, overlap = overlap, clustering_method = cluster_all)
 
   # Complete grid
-  grid = as.matrix(expand.grid(lapply(intervals, function(i){1:i})))
+  grid = as.matrix(expand.grid(lapply(num_intervals, function(i){1:i})))
 
   for(i in 1:nrow(grid))
   {
@@ -106,17 +104,15 @@ test_that("Unit Tests for: Construct Step Grid. Dimension 1", {
   {
 
     N = sample(10:250, 1)
-    filter = runif(N, -100, 100)
-    filter_min = min(filter)
-    filter_max = max(filter)
-    intervals = sample(1:20, 1)
+    filter =  matrix(runif(N, -100, 100), nrow = N, ncol = 1)
+    num_intervals = sample(1:20, 1)
     overlap = sample(1:99, 1)
 
-    step_grid = construct_step_grid(filter_min, filter_max, intervals, overlap)
-    res = mapperKD(k = 1, distance = matrix(rep(1,length(filter)**2), ncol = length(filter)), filter = filter, intervals = intervals, overlap = overlap, clustering_method = cluster_all)
+    step_grid = construct_fixed_step_grid(filter,  num_intervals, overlap)
+    res = mapperKD(k = 1, distance = matrix(rep(1,N**2), ncol = N), filter = filter, num_intervals = num_intervals, overlap = overlap, clustering_method = cluster_all)
 
     # Complete grid
-    grid = as.matrix(expand.grid(lapply(intervals, function(i){1:i})))
+    grid = as.matrix(expand.grid(lapply(num_intervals, function(i){1:i})))
 
     for(i in 1:nrow(grid))
     {
@@ -162,16 +158,14 @@ test_that("Unit Tests for: Construct Step Grid. Dimesnion 2", {
   # Toy case
   N = 30
   filter = cbind(runif(N, -100, 100), runif(N, -100, 100))
-  filter_min = apply(filter,2, min)
-  filter_max = apply(filter,2, max)
-  intervals = c(4,4)
+  num_intervals = c(4,4)
   overlap = c(30,55)
 
-  step_grid = construct_step_grid(filter_min, filter_max, intervals, overlap)
-  res = mapperKD(k = 2, distance = matrix(rep(1,dim(filter)[1]**2), ncol = dim(filter)[1]), filter = filter, intervals = intervals, overlap = overlap, clustering_method = cluster_all)
+  step_grid = construct_fixed_step_grid(filter,  num_intervals, overlap)
+  res = mapperKD(k = 2, distance = matrix(rep(1,dim(filter)[1]**2), ncol = dim(filter)[1]), filter = filter, num_intervals = num_intervals, overlap = overlap, clustering_method = cluster_all)
 
   # Complete grid
-  grid = as.matrix(expand.grid(lapply(intervals, function(i){1:i})))
+  grid = as.matrix(expand.grid(lapply(num_intervals, function(i){1:i})))
 
   for(i in 1:nrow(grid))
   {
@@ -211,15 +205,15 @@ test_that("Unit Tests for: Construct Step Grid. Dimesnion 2", {
     filter_max = max(filter)
     filter_min = apply(filter,2, min)
     filter_max = apply(filter,2, max)
-    intervals = sample(1:20, 2)
+    num_intervals = sample(1:20, 2)
     overlap = sample(1:99, 2)
 
 
-    step_grid = construct_step_grid(filter_min, filter_max, intervals, overlap)
-    res = mapperKD(k = 2, distance = matrix(rep(1,dim(filter)[1]**2), ncol = dim(filter)[1]), filter = filter, intervals = intervals, overlap = overlap, clustering_method = cluster_all)
+    step_grid = construct_fixed_step_grid(filter,  num_intervals, overlap)
+    res = mapperKD(k = 2, distance = matrix(rep(1,dim(filter)[1]**2), ncol = dim(filter)[1]), filter = filter, num_intervals = num_intervals, overlap = overlap, clustering_method = cluster_all)
 
     # Complete grid
-    grid = as.matrix(expand.grid(lapply(intervals, function(i){1:i})))
+    grid = as.matrix(expand.grid(lapply(num_intervals, function(i){1:i})))
 
     for(i in 1:nrow(grid))
     {
@@ -262,16 +256,14 @@ test_that("Unit Tests for: Construct Step Grid. Dimesnion n", {
   # Toy case
   N = 30
   filter = cbind(runif(N, -100, 100), runif(N, -100, 100), runif(N, -100, 100))
-  filter_min = apply(filter,2, min)
-  filter_max = apply(filter,2, max)
-  intervals = c(4,4,4)
+  num_intervals = c(4,4,4)
   overlap = c(30,55, 70)
 
-  step_grid = construct_step_grid(filter_min, filter_max, intervals, overlap)
-  res = mapperKD(k = 3, distance = matrix(rep(1,dim(filter)[1]**2), ncol = dim(filter)[1]), filter = filter, intervals = intervals, overlap = overlap, clustering_method = cluster_all)
+  step_grid = construct_fixed_step_grid(filter,  num_intervals, overlap)
+  res = mapperKD(k = 3, distance = matrix(rep(1,dim(filter)[1]**2), ncol = dim(filter)[1]), filter = filter, num_intervals = num_intervals, overlap = overlap, clustering_method = cluster_all)
 
   # Complete grid
-  grid = as.matrix(expand.grid(lapply(intervals, function(i){1:i})))
+  grid = as.matrix(expand.grid(lapply(num_intervals, function(i){1:i})))
 
   for(i in 1:nrow(grid))
   {
@@ -311,26 +303,21 @@ test_that("Unit Tests for: Construct Step Grid. Dimesnion n", {
     for(i in 1:n)
       filter = cbind(filter, runif(N, -100, 100))
 
-    filter_min = min(filter)
-    filter_max = max(filter)
-    filter_min = apply(filter,2, min)
-    filter_max = apply(filter,2, max)
-
-    intervals = c()
+    num_intervals = c()
     overlap = c()
 
     for(i in 1:n)
     {
-      intervals = c(intervals, sample(2:4, 1))
+      num_intervals = c(num_intervals, sample(2:4, 1))
       overlap = c(overlap, sample(1:75, 1))
     }
 
 
-    step_grid = construct_step_grid(filter_min, filter_max, intervals, overlap)
-    res = mapperKD(k = n, distance = matrix(rep(1,dim(filter)[1]**2), ncol = dim(filter)[1]), filter = filter, intervals = intervals, overlap = overlap, clustering_method = cluster_all)
+    step_grid = construct_fixed_step_grid(filter,  num_intervals, overlap)
+    res = mapperKD(k = n, distance = matrix(rep(1,dim(filter)[1]**2), ncol = dim(filter)[1]), filter = filter, num_intervals = num_intervals, overlap = overlap, clustering_method = cluster_all)
 
     # Complete grid
-    grid = as.matrix(expand.grid(lapply(intervals, function(i){1:i})))
+    grid = as.matrix(expand.grid(lapply(num_intervals, function(i){1:i})))
 
     for(i in 1:nrow(grid))
     {
@@ -365,22 +352,22 @@ context("MapperKD Unit Tests. Error Scenarios")
 test_that("MapperKD Unit Tests. Error Scenarios", {
 
   # General parameters
-  intervals = 2
+  num_intervals = 2
   overlap = 20
   filter = c(1,2,3)
 
   # Bad filter
   filter = c(1,2,3)
   # --- FIlter One dimensional OK (k = 1)
-  expect_true({mapperKD(k = 1, distance = matrix(rep(1,length(filter)**2), ncol = length(filter)), filter = filter, intervals = intervals, overlap = overlap, clustering_method = cluster_all); TRUE})
+  expect_true({mapperKD(k = 1, distance = matrix(rep(1,length(filter)**2), ncol = length(filter)), filter = filter, num_intervals = num_intervals, overlap = overlap, clustering_method = cluster_all); TRUE})
   # --- FIlter One dimensional not OK (k != 1)
-  expect_error(mapperKD(k = 2, distance = matrix(rep(1,length(filter)**2), ncol = length(filter)), filter = filter, intervals = intervals, overlap = overlap, clustering_method = cluster_all))
+  expect_error(mapperKD(k = 2, distance = matrix(rep(1,length(filter)**2), ncol = length(filter)), filter = filter, num_intervals = num_intervals, overlap = overlap, clustering_method = cluster_all))
   # --- FIlter two dimensional OK
   filter = cbind(c(1,2,3),c(4,5,6))
-  expect_true({mapperKD(k = 2, distance = matrix(rep(1,dim(filter)[1]**2), ncol = dim(filter)[1]), filter = filter, intervals = c(intervals,intervals), overlap = c(overlap,overlap), clustering_method = cluster_all); TRUE})
+  expect_true({mapperKD(k = 2, distance = matrix(rep(1,dim(filter)[1]**2), ncol = dim(filter)[1]), filter = filter, num_intervals = c(num_intervals,num_intervals), overlap = c(overlap,overlap), clustering_method = cluster_all); TRUE})
   # --- FIlter two dimensional not OK
-  expect_error(mapperKD(k = 1, distance = matrix(rep(1,dim(filter)[1]**2), ncol = dim(filter)[1]), filter = filter, intervals = intervals, overlap = overlap, clustering_method = cluster_all))
-  expect_error(mapperKD(k = 3, distance = matrix(rep(1,dim(filter)[1]**2), ncol = dim(filter)[1]), filter = filter, intervals = intervals, overlap = overlap, clustering_method = cluster_all))
+  expect_error(mapperKD(k = 1, distance = matrix(rep(1,dim(filter)[1]**2), ncol = dim(filter)[1]), filter = filter, num_intervals = num_intervals, overlap = overlap, clustering_method = cluster_all))
+  expect_error(mapperKD(k = 3, distance = matrix(rep(1,dim(filter)[1]**2), ncol = dim(filter)[1]), filter = filter, num_intervals = num_intervals, overlap = overlap, clustering_method = cluster_all))
 
   # TODO: Finish
 })

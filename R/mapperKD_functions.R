@@ -14,7 +14,10 @@ library('sets')
 #' @param k a positive integer indicating the number of dimensions of the filter space
 #' @param distance an n x n matrix of pairwise distances or dissimilarities. If the parameter \code{local_distance} is set to \code{TRUE}, this parameter is ignored since the clustering algorithm will receive a subset of the data.
 #' @param filter an n x k matrix of the filter space values, where n corresponds to the number of observations and k to the filter space dimension.
-#' @param intervals a vector of k positive integers, the number of intervals for each correspong dimension of the filter space.
+#' @param interval_scheme A string indicating the interval scheme. Default value is: FIXED Currently there is only support for two schemes:
+#'        - FIXED: traditional scheme. The user must provide the number of intervals (\code{num_intervals}) and the percentage of overlap (\code{overlap})
+#'        - GMM: Gaussian Mixed Model. Excecutes a GMM procedure over each dimension to infer the intervals and overlaps to be used.
+#' @param num_intervals a vector of k positive integers, the number of intervals for each correspong dimension of the filter space.
 #' @param overlap a vector of k numbers between 0 and 100, specifying how much adjacent intervals should overlap for each dimension of the filter space.
 #' @param clustering_method clustering method to be used for each pre-image. If the parameter \code{local_distance} is set to \code{TRUE}, the given funtion must receive as a parameter a distance matrix. If the parameter \code{local_distance} is set to \code{FALSE}, the given funtion must receive as a parameter a list of indices (The indices of the corresponding interval). In any case, it mus return an array with the corresiponding number cluster for each of the given points. Clusters numbers must start with 1 and have no gaps between them. Default is: hierarchical_clustering
 #' @param local_distance a boolean indicating if the algorithm should construct the distance function based on the data at every pre-image. Usefull for low RAM enviorments or specific clustering. Default value is \code{FALSE}
@@ -39,6 +42,7 @@ library('sets')
 #' one_squeleton_result = mapperKD(k = 1,
 #'                                 distance = as.matrix(dist(data_points)),
 #'                                 filter = data_points$x,
+#'                                 interval_scheme = "FIXED",
 #'                                 intervals = c(12),
 #'                                 overlap = c(50),
 #'                                 clustering_method = hierarchical_clustering)
@@ -54,8 +58,9 @@ library('sets')
 mapperKD = function(k,
                     distance,
                     filter,
-                    intervals,
-                    overlap,
+                    interval_scheme = "FIXED",
+                    num_intervals = NA,
+                    overlap = NA,
                     clustering_method = hierarchical_clustering,
                     local_distance = FALSE,
                     data = NA)
@@ -77,43 +82,48 @@ mapperKD = function(k,
   }
 
   if(dim(filter)[2] != k)
-    stop(paste('Expected a matrix with',k,'columns for the filter parameter but got a matrix with',dim(filter)[2],'columns instead'))
+    stop(paste('Expected a matrix with',k,'columns for the filter parameter but got a matrix with', dim(filter)[2], 'columns instead'))
 
   if(dim(filter)[1] == 1)
     stop('Sample needs at least two points to work.')
 
-  # Intervals
-  if(is.null(intervals) || is.na(intervals))
-    stop('Intervals cannot be NULL')
 
-  if(k != 1 && length(intervals) == 1)
+  if(toupper(interval_scheme) == "FIXED")
   {
-    print('The vector of intervals has dimension 1. Assuming its value for all dimensions of the filter space')
-    intervals = rep(intervals, k)
+    # Intervals
+    if(is.null(num_intervals) || is.na(num_intervals))
+      stop('Number of Intervals cannot be NULL')
+
+    if(k != 1 && length(num_intervals) == 1)
+    {
+      print('The vector of intervals has dimension 1. Assuming its value for all dimensions of the filter space')
+      num_intervals = rep(num_intervals, k)
+    }
+
+    if(length(num_intervals) != k )
+      stop(paste('Expected a',k,'dimensional vector for the intervals parameter but got a',length(num_intervals),'dimensional vector instead'))
+
+    if(any(num_intervals <= 0))
+      stop('All interval values must be positive integers')
+
+
+    # Overlap
+    if(is.null(overlap) || is.na(overlap))
+      stop('Overlap cannot be NULL')
+
+    if(k != 1 && length(overlap) == 1)
+    {
+      print('The vector of overlap has dimension 1. Assuming its value for all dimensions of the filter space')
+      overlap = rep(overlap, k)
+    }
+
+    if(length(overlap) != k )
+      stop(paste('Expected a',k,'dimensional vector for the overlap parameter but got a',length(num_intervals),'dimensional vector instead'))
+
+    if(any(num_intervals < 0) || any(num_intervals > 100))
+      stop('All interval values must have values between 0 and a 100.')
   }
 
-  if(length(intervals) != k )
-    stop(paste('Expected a',k,'dimensional vector for the intervals parameter but got a',length(intervals),'dimensional vector instead'))
-
-  if(any(intervals <= 0))
-    stop('All interval values must be positive integers')
-
-
-  # Overlap
-  if(is.null(overlap) || is.na(overlap))
-    stop('Overlap cannot be NULL')
-
-  if(k != 1 && length(overlap) == 1)
-  {
-    print('The vector of overlap has dimension 1. Assuming its value for all dimensions of the filter space')
-    overlap = rep(overlap, k)
-  }
-
-  if(length(overlap) != k )
-    stop(paste('Expected a',k,'dimensional vector for the overlap parameter but got a',length(intervals),'dimensional vector instead'))
-
-  if(any(intervals < 0) || any(intervals > 100))
-    stop('All interval values must have values between 0 and a 100.')
 
   # Distance
   if(is.null(distance) || is.na(distance))
@@ -122,30 +132,31 @@ mapperKD = function(k,
   if(local_distance && missing(data))
     stop('local_distance is set to TRUE, so the data parameter must be supplied.')
 
+  # ------------
+  # End of errrors
 
 
 
-  # Sets up the iteration process through intervals and overlap values
-  # ----------------
-
-  # Minimum and maximum filter values
-  if(k == 1)
+  # Sets up the interval scheme
+  if(toupper(interval_scheme) == "FIXED")
   {
-    filter_min = min(filter)
-    filter_max = max(filter)
+    # Sets the intervals
+    intervals = num_intervals
+    # Sets the function to extract the interval
+    get_interval = get_fixed_interval_extractor(filter, num_intervals, overlap)
+
+    #   Constructs the search possibilities. Only checks intersection with further intervals (Adjacency matrix is symmetric)
+    # Extracts the step grid
+    step_grid = construct_fixed_step_grid(filter, intervals, overlap)
+
+  }
+  else if(toupper(interval_scheme) == "GMM")
+  {
+    stop('Not Implemented')
   }
   else
-  {
-    filter_min = apply(filter,2, min)
-    filter_max = apply(filter,2, max)
-  }
+    stop(paste("The interval_scheme:", interval_scheme, "is not supported"))
 
-
-  # Finds overlaped window size
-  window_size = (filter_max - filter_min)/(intervals - (intervals - 1)*overlap/100)
-
-  # Step size
-  step_size = window_size*(1 - overlap/100)
 
   # Initializes the output parameters
 
@@ -179,14 +190,10 @@ mapperKD = function(k,
 
     # Sets up the current interval
     # ------------------------
-    #   Extracts the interval's current max and min values
-    interval_min = filter_min + (coordinates - 1)*step_size
-    interval_max = interval_min + window_size
 
-    #   For of numeric precision, the max filter value for the las intervals in each dimension are forced to be the filter's max value on the correponding dimension
-    #   Same scneario when the window size is zero (which should include the whole interval in the given dimension)
-    interval_max[coordinates == intervals] = filter_max[coordinates == intervals]
-    interval_max[window_size == 0] = filter_max[window_size == 0]
+    current_interval = get_interval(coordinates)
+    interval_min = current_interval[['min']]
+    interval_max = current_interval[['max']]
 
 
     #   Gets the indices of the samples that fall on the current interval
@@ -271,10 +278,6 @@ mapperKD = function(k,
 
   #   Starts the coordinates
   coordinates = rep(1,k)
-
-  #   Constructs the search possibilities. Only checks intersection with further intervals (Adjacency matrix is symmetric)
-  # Extracts the step grid
-  step_grid = construct_step_grid(filter_min, filter_max, intervals, overlap)
 
   # Converts all the node lists to sets for efficiency
   elements_in_node_as_set = lapply(elements_in_node, as.set)
@@ -364,40 +367,6 @@ mapperKD = function(k,
 }
 
 
-#' Function that calculates the forward grid search space.
-#' This method should return all the values that should be added to interval to obtain all the possible places
-#' where an intersection might occur. This functionality is isolated inside a method to test it individually.
-construct_step_grid = function(filter_min, filter_max, intervals, overlap)
-{
-
-  # Constructs the search possibilities. Only checks intersection with further intervals (Adjacency matrix is symmetric)
-
-  # Finds overlaped window size
-  window_size = (filter_max - filter_min)/(intervals - (intervals - 1)*overlap/100)
-  # Step size
-  step_size = window_size*(1 - overlap/100)
-
-  # Depending on overlap, non adjacent intersection is possible
-
-  max_search_posibilities = ceiling(1/(1 - overlap/100)) - 1
-  max_search_posibilities = pmin(max_search_posibilities, intervals) # Should not check further than the total amount of intervals
-
-  # If window_size is equal to zero, then the amount of overlap has no efect and should check all intervals in every iteration.
-  max_search_posibilities[window_size == 0] = intervals[window_size == 0]
-
-  # Creates the search possibilities
-  search_possibilities = lapply(1:length(intervals), function(i){0:max_search_posibilities[i]})
-
-  #   The steps grid (structure to detect levels where possible intersection might occur)
-  step_grid = as.matrix(expand.grid(search_possibilities))
-  colnames(step_grid) <- NULL
-
-  #   Removes itself from the possible steps
-  step_grid = as.matrix(step_grid[rowSums(step_grid) > 0,])
-
-
-  return(step_grid)
-}
 
 #' Function for advancing coordinates
 advance_coordinates = function(coordinates, max_values)
@@ -420,4 +389,87 @@ advance_coordinates = function(coordinates, max_values)
   }
 
   return(coordinates)
+}
+
+
+# -------------------------
+# -- Fixed Interval Methods
+# -------------------------
+
+#' Constructs a function that gives the mins and maxs filter values of the given coordinates.
+#' Returns the desired function
+#' TODO: Document
+get_fixed_interval_extractor = function(filter, num_intervals, overlap)
+{
+
+  # Minimum and maximum filter values
+  filter_min = apply(filter,2, min)
+  filter_max = apply(filter,2, max)
+
+  # Finds overlaped window size
+  window_size = (filter_max - filter_min)/(num_intervals - (num_intervals - 1)*overlap/100)
+
+  # Step size
+  step_size = window_size*(1 - overlap/100)
+
+  get_fixed_interval = function(coordinates)
+  {
+    #   Extracts the interval's current max and min values
+    interval_min = filter_min + (coordinates - 1)*step_size
+    interval_max = interval_min + window_size
+
+    #   For of numeric precision, the max filter value for the las intervals in each dimension are forced to be the filter's max value on the correponding dimension
+    #   Same scneario when the window size is zero (which should include the whole interval in the given dimension)
+    interval_max[coordinates == num_intervals] = filter_max[coordinates == num_intervals]
+    interval_max[window_size == 0] = filter_max[window_size == 0]
+
+    # Saves the results
+    response = list()
+    response[['min']] = interval_min
+    response[['max']] = interval_max
+
+    return(response)
+  }
+
+
+  return(get_fixed_interval)
+
+}
+
+#' Function that calculates the forward grid search space.
+#' This method should return all the values that should be added to interval to obtain all the possible places
+#' where an intersection might occur. This functionality is isolated inside a method to test it individually.
+#' TODO: Document
+construct_fixed_step_grid = function(filter, intervals, overlap)
+{
+
+  # Constructs the search possibilities. Only checks intersection with further intervals (Adjacency matrix is symmetric)
+
+  # Minimum and maximum filter values
+  filter_min = apply(filter,2, min)
+  filter_max = apply(filter,2, max)
+
+  # Finds overlaped window size
+  window_size = (filter_max - filter_min)/(intervals - (intervals - 1)*overlap/100)
+
+  # Depending on overlap, non adjacent intersection is possible
+
+  max_search_posibilities = ceiling(1/(1 - overlap/100)) - 1
+  max_search_posibilities = pmin(max_search_posibilities, intervals) # Should not check further than the total amount of intervals
+
+  # If window_size is equal to zero, then the amount of overlap has no efect and should check all intervals in every iteration.
+  max_search_posibilities[window_size == 0] = intervals[window_size == 0]
+
+  # Creates the search possibilities
+  search_possibilities = lapply(1:length(intervals), function(i){0:max_search_posibilities[i]})
+
+  #   The steps grid (structure to detect levels where possible intersection might occur)
+  step_grid = as.matrix(expand.grid(search_possibilities))
+  colnames(step_grid) <- NULL
+
+  #   Removes itself from the possible steps
+  step_grid = as.matrix(step_grid[rowSums(step_grid) > 0,])
+
+
+  return(step_grid)
 }
