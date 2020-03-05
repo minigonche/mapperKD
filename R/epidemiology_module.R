@@ -3,7 +3,7 @@ require('igraph')
 require('ggmap')
 
 # Epidemiology Module
-# This module contains the different functions and procedures to recreate the results from the publication: MISSING_CITATION.
+# This module contains the different functions and procedures to recreate the results from the publication: Knudson, Angélica, et al. "Spatio-temporal dynamics of Plasmodium falciparum transmission within a spatial unit on the Colombian Pacific Coast." Scientific Reports 10.1 (2020): 1-16.
 
 
 
@@ -158,7 +158,7 @@ plot_1_esqueleton = function(one_squeleton_result, layout = 'grid', min_node_siz
 
 
 # extract_intersection_centrality
-#' Extracts the intersection centrality described in MISSING_CITATION.
+#' Extracts the intersection centrality described in Knudson, Angélica, et al. "Spatio-temporal dynamics of Plasmodium falciparum transmission within a spatial unit on the Colombian Pacific Coast." Scientific Reports 10.1 (2020): 1-16.
 #' @param one_squeleton_result The one_squeleton object to extract the centralities
 #' @return A vector with numeric values corresponding to the intersection centrality of the elements in the given one_squeleton
 extract_intersection_centrality = function(one_squeleton_result)
@@ -170,7 +170,7 @@ extract_intersection_centrality = function(one_squeleton_result)
 
 
 # create_point_intersection_adjacency
-#' Constructs the Point Intersection Network as described in MISSING_CITATION.
+#' Constructs the Point Intersection Network as described in Knudson, Angélica, et al. "Spatio-temporal dynamics of Plasmodium falciparum transmission within a spatial unit on the Colombian Pacific Coast." Scientific Reports 10.1 (2020): 1-16.
 #' @param one_squeleton_result A one_squeleton object to construct the network
 #' @return The corresponding adjacency matrix for the point intersection network
 create_point_intersection_adjacency = function(one_squeleton_result)
@@ -205,7 +205,7 @@ create_point_intersection_adjacency = function(one_squeleton_result)
 }
 
 # create_point_intersection_network
-#' Constructs the Point Intersection Network as described in MISSING_CITATION.
+#' Constructs the Point Intersection Network as described in Knudson, Angélica, et al. "Spatio-temporal dynamics of Plasmodium falciparum transmission within a spatial unit on the Colombian Pacific Coast." Scientific Reports 10.1 (2020): 1-16.
 #' @param one_squeleton_result A one_squeleton object to construct the network
 #' @return An igraph element with the point intersection network
 create_point_intersection_network = function(one_squeleton_result)
