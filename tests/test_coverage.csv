@@ -8,6 +8,8 @@ mapperKD_functions.R,construct_step_grid,complete,,YES,test_maperkd_unit.R,"Seve
 mapperKD_functions.R,construct_step_grid_by_max_search,complete,,YES,test_maperkd_unit.R,Selected and random scenarios
 mapperKD_functions.R,extract_gmm_intervals,complete,,YES,test_maperkd_unit.R,Selected scenarios only
 mapperKD_functions.R,extract_gmm_look_forward,complete,,YES,test_maperkd_unit.R,Selected scenarios only
+mapperKD_functions.R,construct_gmm_get_interval_function,complete,,YES,test_maperkd_unit.R,Selected scenarios only
+mapperKD_functions.R,get_gmm_components,complete,1 dimension,YES,test_maperkd_unit.R,Selected scenarios only
 ,,,,,,
 cluster_functions.R,hierarchical_clustering,complete,,NO,,
 epidemiology_module.R,convert_to_graph,complete,,NO,,

@@ -1,7 +1,3 @@
-require('ggplot2')
-require('igraph')
-require('ggmap')
-
 # Epidemiology Module
 # This module contains the different functions and procedures to recreate the results from the publication: Knudson, Angélica, et al. "Spatio-temporal dynamics of Plasmodium falciparum transmission within a spatial unit on the Colombian Pacific Coast." Scientific Reports 10.1 (2020): 1-16.
 
@@ -17,6 +13,8 @@ require('ggmap')
 #' @return A vector with the corresponding sizes
 convert_to_graph = function(one_squeleton_result)
 {
+  # Loads igraph
+  require('igraph')
 
   # Creates the graph
   g = graph.adjacency(one_squeleton_result$adjacency_matrix, mode = 'undirected')
@@ -121,6 +119,8 @@ get_filter_dimension = function(one_squeleton_result)
 #' @param max_node_size Maximum node size. Default is 23.
 plot_1_esqueleton = function(one_squeleton_result, layout = 'grid', min_node_size = 3, max_node_size = 23)
 {
+  # Loads igraph
+  require('igraph')
 
   # Constructs the graph
   g = convert_to_graph(one_squeleton_result)
@@ -210,6 +210,9 @@ create_point_intersection_adjacency = function(one_squeleton_result)
 #' @return An igraph element with the point intersection network
 create_point_intersection_network = function(one_squeleton_result)
 {
+  # Loads igraph
+  require('igraph')
+
   adjacency = create_point_intersection_adjacency(one_squeleton_result)
   pin = graph.adjacency(adjacency, mode = 'directed')
 
@@ -229,6 +232,9 @@ create_point_intersection_network = function(one_squeleton_result)
 #' @param max_node_size Maximum node size. Default is 10.
 plot_intersection_network = function(one_squeleton_result, groups = NULL, min_node_size = 3, max_node_size = 20)
 {
+  # Loads igraph
+  require('igraph')
+
   # Creates the network
   pin = create_point_intersection_network(one_squeleton_result)
 
@@ -302,6 +308,12 @@ plot_intersection_network_over_map = function(one_squeleton_result,
                                               noise = 1,
                                               focus_on = NULL)
 {
+
+  # Loads igraph and plotting libraries
+  require('igraph')
+  require('ggplot2')
+  require('ggmap')
+
 
   if(max(lon) == min(lon) && max(lat) == min(lat) && noise == 0 )
     stop("All points have the same coordinates, noise must be greater than 0 to plot (or else it's simply one point)")

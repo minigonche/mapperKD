@@ -67,6 +67,8 @@ mapperKD = function(k,
                     local_distance = FALSE,
                     data = NA)
 {
+  # Corrects interval_scheme
+  interval_scheme = toupper(interval_scheme)
 
   # Parameter consistency check
   # --------------------
@@ -125,7 +127,14 @@ mapperKD = function(k,
     if(any(num_intervals < 0) || any(num_intervals > 100))
       stop('All interval values must have values between 0 and a 100.')
   }
+  if( interval_scheme == "GMM")
+  {
+    if(is.null(width))
+      print("Width cannot be NULL")
 
+    if(width <= 0)
+      print("with has to be positive")
+  }
 
   # Distance
   if(is.null(distance) || is.na(distance))
@@ -462,16 +471,16 @@ construct_fixed_step_grid = function(filter, intervals, overlap)
 
   # Depending on overlap, non adjacent intersection is possible
 
-  max_search_posibilities = ceiling(1/(1 - overlap/100)) - 1
-  max_search_posibilities = pmin(max_search_posibilities, intervals) # Should not check further than the total amount of intervals
+  max_search_possibilities = ceiling(1/(1 - overlap/100)) - 1
+  max_search_possibilities = pmin(max_search_possibilities, intervals) # Should not check further than the total amount of intervals
 
   # If window_size is equal to zero, then the amount of overlap has no efect and should check all intervals in every iteration.
-  max_search_posibilities[window_size == 0] = intervals[window_size == 0]
+  max_search_possibilities[window_size == 0] = intervals[window_size == 0]
 
   # Returns the stepgrid
-  stepgrid = construct_step_grid_by_max_search(max_search_possibilities)
+  step_grid = construct_step_grid_by_max_search(max_search_possibilities)
 
-  return(stepgrid)
+  return(step_grid)
 
 }
 
@@ -482,6 +491,7 @@ construct_fixed_step_grid = function(filter, intervals, overlap)
 #' @return matrix with the corresponding stepgrid. Columns: Number of dimensions and each road correspond to a posible next interval to be searched.
 construct_step_grid_by_max_search = function(max_search_possibilities)
 {
+
 
   # Creates the search possibilities
   search_possibilities = lapply(1:length(max_search_possibilities), function(i){0:max_search_possibilities[i]})
@@ -515,6 +525,7 @@ get_gmm_components = function(filter, width = 2)
   # Loads the required packages
   require('mclust')
 
+
   # Initializes the interval variable
   intervals = c()
 
@@ -535,18 +546,29 @@ get_gmm_components = function(filter, width = 2)
     max_filter = max(current_set)
 
     # Excecutes the clustering scheme (GMM)
-    BIC = mclustBIC(current_set)
-    clust_res = Mclust(current_set, x = BIC)
+    BIC = mclustBIC(current_set, verbose = FALSE)
+    clust_res = Mclust(current_set, x = BIC, verbose = FALSE)
 
     # Extracts the result
     num_clusters = clust_res$G
 
 
     means = as.vector(clust_res$parameters$mean)
-    stds = sqrt(clust_res$parameters$variance$sigmasq)
+
+
+    var_model_name = clust_res$parameters$variance$modelName
+    # Extracts the variance
+    if( var_model_name == "V")
+      stds = sqrt(clust_res$parameters$variance$sigmasq)
+    else if(var_model_name == "E" || var_model_name == "X")
+      stds = sqrt(rep(clust_res$parameters$variance$sigmasq, num_clusters))
+    else
+      stop(paste("Unrecognized variance model name:", clust_res$parameters$variance$modelName))
 
     # Calculates the intervals
-    resp = extract_gmm_intervals(means, stds, width, min_interval, max_interval)
+
+    resp = extract_gmm_intervals(means, stds, width, min_filter, max_filter)
+
 
     # Adds the start and finish
     all_start_locations[[i]] = resp[['start_locations']]
@@ -557,6 +579,8 @@ get_gmm_components = function(filter, width = 2)
 
     # Adds max look forward
     look_forward = extract_gmm_look_forward(resp[['start_locations']], resp[['finish_locations']])
+
+
     max_look_forward = c(max_look_forward, look_forward)
 
   }
@@ -569,7 +593,7 @@ get_gmm_components = function(filter, width = 2)
   get_gmm_interval = construct_gmm_get_interval_function(all_start_locations, all_finish_locations)
 
   # Finally constructs the stepgrid
-  stepgrid = construct_step_grid_by_max_search(max_look_forward)
+  step_grid = construct_step_grid_by_max_search(max_look_forward)
 
 
 
@@ -633,6 +657,9 @@ extract_gmm_intervals = function(means, stds, width, min_interval, max_interval)
 #' @return Number with the amount of intervals to look ahead
 extract_gmm_look_forward = function(start_locations, finish_locations)
 {
+
+  if(length(start_locations) == 1)
+    return(0)
 
   max_look_ahead = 0
   for(i in 1:(length(start_locations) - 1))

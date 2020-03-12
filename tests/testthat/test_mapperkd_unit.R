@@ -480,6 +480,101 @@ test_that("MapperKD Unit Tests. Extract GMM Look Forward", {
 
 
 
+context("MapperKD Unit Tests. Extract GMM Get Interval Function")
+test_that("MapperKD Unit Tests. Extract GMM Get Interval Function", {
+
+  # Single dimension, single interval
+  all_start_locations = list()
+  all_start_locations[[1]] = c(0)
+  all_finish_locations = list()
+  all_finish_locations[[1]] = c(10)
+
+  fun = construct_gmm_get_interval_function(all_start_locations, all_finish_locations)
+  expect_equal( fun(c(1))$min, 0)
+  expect_equal(fun(c(1))$max, 10)
+
+  # Single dimension, multiple interval
+  all_start_locations = list()
+  all_start_locations[[1]] = c(0,1,2)
+  all_finish_locations = list()
+  all_finish_locations[[1]] = c(10,11,12)
+
+  fun = construct_gmm_get_interval_function(all_start_locations, all_finish_locations)
+  expect_equal( fun(c(1))$min, 0)
+  expect_equal(fun(c(1))$max, 10)
+  expect_equal( fun(c(2))$min, 1)
+  expect_equal(fun(c(2))$max, 11)
+  expect_equal( fun(c(3))$min, 2)
+  expect_equal(fun(c(3))$max, 12)
+
+  # Multiple dimension, multiple interval
+  all_start_locations = list()
+  all_start_locations[[1]] = c(0,1,2)
+  all_start_locations[[2]] = c(100,200,300)
+  all_finish_locations = list()
+  all_finish_locations[[1]] = c(10,11,12)
+  all_finish_locations[[2]] = c(250,350,450)
+
+  fun = construct_gmm_get_interval_function(all_start_locations, all_finish_locations)
+  expect_equal( fun(c(1,1))$min, c(0,100))
+  expect_equal(fun(c(1,1))$max, c(10,250))
+
+  expect_equal( fun(c(2,1))$min, c(1,100))
+  expect_equal(fun(c(2,1))$max, c(11,250))
+
+  expect_equal( fun(c(3,1))$min, c(2,100))
+  expect_equal(fun(c(3,1))$max, c(12,250))
+
+  expect_equal( fun(c(2,2))$min, c(1,200))
+  expect_equal(fun(c(2,2))$max, c(11,350))
+
+  expect_equal( fun(c(3,2))$min, c(2,200))
+  expect_equal(fun(c(3,2))$max, c(12,350))
+
+  expect_equal( fun(c(3,3))$min, c(2,300))
+  expect_equal(fun(c(3,3))$max, c(12,450))
+})
+
+
+context("MapperKD Unit Tests. Extract the GMM Components. One Dimension")
+test_that("MapperKD Unit Tests. Extract the GMM Components. One Dimension", {
+
+
+  # Single dimension. Single cluster
+  fil = seq(-1, 1, by=0.1)
+  filter = matrix(fil, nrow = length(fil), ncol = 1)
+  resp = get_gmm_components(filter, width = 2)
+  expect_equal(length(resp$intervals), 1)
+  expect_equal(resp$intervals[1], 1)
+  expect_equal(length(resp$step_grid), 0)
+  expect_equal( resp$get_interval(1)$min, -1)
+  expect_equal( resp$get_interval(1)$max, 1)
+
+
+
+  # Single dimension. Two clusters. No overlap
+  fil = c(seq(-2, -1, by=0.05), seq(1, 2, by=0.05))
+  filter = matrix(fil, nrow = length(fil), ncol = 1)
+  resp = get_gmm_components(filter, width = 1)
+  expect_equal(length(resp$intervals), 1)
+  expect_equal(resp$intervals[1], 2)
+  expect_equal(length(resp$step_grid), 0)
+  expect_equal( resp$get_interval(1)$min, -2)
+  expect_equal( resp$get_interval(2)$max, 2)
+
+
+  # Single dimension. Two clusters. Overlap
+  fil = c(seq(-2, -1, by=0.05), seq(1, 2, by=0.05))
+  filter = matrix(fil, nrow = length(fil), ncol = 1)
+  resp = get_gmm_components(filter, width = 100) # Very width clusters
+  expect_equal(length(resp$intervals), 1)
+  expect_equal(resp$intervals[1], 2)
+  expect_equal(length(resp$step_grid), 1)
+  expect_equal( resp$get_interval(1)$min, -2)
+  expect_equal( resp$get_interval(2)$max, 2)
+
+
+})
 
 
 context("MapperKD Unit Tests. Error Scenarios")
