@@ -19,7 +19,7 @@ library('sets')
 #'        - GMM: Gaussian Mixed Model. Excecutes a GMM procedure over each dimension to infer the intervals and overlaps to be used.
 #' @param num_intervals a vector of k positive integers, the number of intervals for each correspong dimension of the filter space.
 #' @param overlap a vector of k numbers between 0 and 100, specifying how much adjacent intervals should overlap for each dimension of the filter space.
-#' @param widrh Parameter used when the interval_scheme is GMM. Corresponds to the width of the clusters when excecuting GMM, each interval corresponds to [mean - width*std, mean + width*std] (for each dimension)
+#' @param width Parameter used when the interval_scheme is GMM. Corresponds to the width of the clusters when excecuting GMM, each interval corresponds to [mean - width*std, mean + width*std] (for each dimension)
 #' @param clustering_method clustering method to be used for each pre-image. If the parameter \code{local_distance} is set to \code{TRUE}, the given funtion must receive as a parameter a distance matrix. If the parameter \code{local_distance} is set to \code{FALSE}, the given funtion must receive as a parameter a list of indices (The indices of the corresponding interval). In any case, it mus return an array with the corresiponding number cluster for each of the given points. Clusters numbers must start with 1 and have no gaps between them. Default is: hierarchical_clustering
 #' @param local_distance a boolean indicating if the algorithm should construct the distance function based on the data at every pre-image. Usefull for low RAM enviorments or specific clustering. Default value is \code{FALSE}
 #'
@@ -475,6 +475,28 @@ construct_fixed_step_grid = function(filter, intervals, overlap)
 
 }
 
+# construct_step_grid_by_max_search
+#' Method that calculates a stepgrid by given the max look ahead by each dimension.
+#' This methos is isolated to test it individually
+#' @param max_search_possibilities Numeric vector with the maximum look ahead seach that should be done
+#' @return matrix with the corresponding stepgrid. Columns: Number of dimensions and each road correspond to a posible next interval to be searched.
+construct_step_grid_by_max_search = function(max_search_possibilities)
+{
+
+  # Creates the search possibilities
+  search_possibilities = lapply(1:length(max_search_possibilities), function(i){0:max_search_possibilities[i]})
+
+  #   The steps grid (structure to detect levels where possible intersection might occur)
+  step_grid = as.matrix(expand.grid(search_possibilities))
+  colnames(step_grid) <- NULL
+
+  #   Removes itself from the possible steps
+  step_grid = as.matrix(step_grid[rowSums(step_grid) > 0,])
+
+  return(step_grid)
+
+}
+
 
 
 # -------------------------
@@ -544,20 +566,7 @@ get_gmm_components = function(filter, width = 2)
   final_intervals = intervals
 
   # The function that gets the interval
-  get_gmm_interval = function(coordinates)
-  {
-    # Constructs the min and max
-    interval_min = sapply(1:k, function(j) all_start_locations[[j]][coordinates[j]]  )
-    interval_max = sapply(1:k, function(j) all_finish_locations[[j]][coordinates[j]]  )
-
-    # Saves the results
-    response = list()
-    response[['min']] = interval_min
-    response[['max']] = interval_max
-
-    return(response)
-  }
-
+  get_gmm_interval = construct_gmm_get_interval_function(all_start_locations, all_finish_locations)
 
   # Finally constructs the stepgrid
   stepgrid = construct_step_grid_by_max_search(max_look_forward)
@@ -600,12 +609,12 @@ extract_gmm_intervals = function(means, stds, width, min_interval, max_interval)
   stds = stds[sorted_indexes]
 
   # Creates the start and finish vectors according to the width
-  start_locations = sapply(1:num_clusters, function(i){max( means[i] - width*std[i] , min_filter)})
-  finish_locations = sapply(1:num_clusters, function(i){min( means[i] + width*std[i] , max_filter)})
+  start_locations = sapply(1:num_clusters, function(i){max( means[i] - width*stds[i] , min_interval)})
+  finish_locations = sapply(1:num_clusters, function(i){min( means[i] + width*stds[i] , max_interval)})
 
   # Adjust the first and final so all points are included.
-  start_locations[1] = min_filter
-  finish_locations[length(finish_locations)] = max_filter
+  start_locations[1] = min_interval
+  finish_locations[length(finish_locations)] = max_interval
 
   # Response
   response = list()
@@ -625,7 +634,7 @@ extract_gmm_intervals = function(means, stds, width, min_interval, max_interval)
 extract_gmm_look_forward = function(start_locations, finish_locations)
 {
 
-  max_look_ahead = 1
+  max_look_ahead = 0
   for(i in 1:(length(start_locations) - 1))
   {
     # Checks intersection with filters ahead
@@ -633,28 +642,42 @@ extract_gmm_look_forward = function(start_locations, finish_locations)
     max_look_ahead = max(look_ahead, max_look_ahead)
   }
 
-  return(look_ahead)
+  return(max_look_ahead)
 
 }
 
-# construct_step_grid_by_max_search
-#' Method that calculates a stepgrid by given the max look ahead by each dimension.
-#' This methos is isolated to test it individually
-#' @param max_search_possibilities Numeric vector with the maximum look ahead seach that should be done
-#' @return matrix with the corresponding stepgrid. Columns: Number of dimensions and each road correspond to a posible next interval to be searched.
-construct_step_grid_by_max_search = function(max_search_possibilities)
+
+# construct_gmm_get_interval_function
+#' Method that constructs the function that returns the intervals given the parameters.
+#' The result of this function is used  when the interval scheme is GMM. The funciton was isolated to test individually
+#' @param all_start_locations List with numeric indices, where each location contains a numeric vector for the start positions on the filter space at that precise dimension.
+#' @param all_finish_locations List with numeric indices, where each location contains a numeric vector for the finish positions on the filter space at that precise dimension.
+#' @return A function with the following behaviour:
+#'         - Parameters:
+#'             - coordinates: numeric vector with the current coordinates of the intervals
+#'         - Returns: a list with two elements:
+#'            - min: numeric vector with the minimum position for the given interval for each dimension
+#'            - max: numeric vector with the maximum position for the given interval for each dimension
+construct_gmm_get_interval_function = function(all_start_locations, all_finish_locations)
 {
 
-  # Creates the search possibilities
-  search_possibilities = lapply(1:length(intervals), function(i){0:max_search_possibilities[i]})
 
-  #   The steps grid (structure to detect levels where possible intersection might occur)
-  step_grid = as.matrix(expand.grid(search_possibilities))
-  colnames(step_grid) <- NULL
+  # Extracts the number of dimensions
+  k = length(all_start_locations)
 
-  #   Removes itself from the possible steps
-  step_grid = as.matrix(step_grid[rowSums(step_grid) > 0,])
+  get_gmm_interval = function(coordinates)
+  {
+    # Constructs the min and max
+    interval_min = sapply(1:k, function(j) all_start_locations[[j]][coordinates[j]]  )
+    interval_max = sapply(1:k, function(j) all_finish_locations[[j]][coordinates[j]]  )
 
-  return(step_grid)
+    # Saves the results
+    response = list()
+    response[['min']] = interval_min
+    response[['max']] = interval_max
 
+    return(response)
+  }
+
+  return(get_gmm_interval)
 }

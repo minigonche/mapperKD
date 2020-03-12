@@ -347,6 +347,141 @@ test_that("Unit Tests for: Construct Step Grid. Dimesnion n", {
 })
 
 
+
+
+context("MapperKD Unit Tests. Construct Step Grid by Max Search")
+# Test scnearios that respond with errors
+test_that("MapperKD Unit Tests. Construct Step Grid by Max Search", {
+
+  # Simple scenario
+  max_search_possibilities = c(10)
+  resp = construct_step_grid_by_max_search(max_search_possibilities)
+  expect_equal(resp[,1], 1:10)
+
+  # Simple scenario 2
+  max_search_possibilities = c(2,2)
+  resp = construct_step_grid_by_max_search(max_search_possibilities)
+  expect_equal(nrow(resp), prod(max_search_possibilities + 1) - 1)
+
+  # Scenario with zero
+  max_search_possibilities = c(0,5,0)
+  resp = construct_step_grid_by_max_search(max_search_possibilities)
+  expect_equal(resp[,2], 1:5)
+
+
+  # Random scenarios
+  num_ite = 10*percetange_of_test
+  #num_ite = 1
+  for(k in 1:num_ite)
+  {
+    dim = sample(1:4, 1)
+    max_search_possibilities = sample(1:10, dim)
+    resp = construct_step_grid_by_max_search(max_search_possibilities)
+
+    # Tests
+    expect_equal(nrow(resp), prod(max_search_possibilities + 1) - 1) # Amount of elements
+    expect_equal(sum(rowSums(resp == rep(0, dim)) == dim), 0) # No zero
+    expect_equal(sum(duplicated(data.frame(resp))), 0) # No duplicated
+
+  }
+
+
+})
+
+
+
+
+
+context("MapperKD Unit Tests. Extract GMM Intervals")
+# Test scnearios that respond with errors
+test_that("MapperKD Unit Tests. Extract GMM Intervalsh", {
+
+  # Selcted scenarios
+  # Scenario 1
+  means = 0
+  stds = 1
+  width = 1
+  min_interval = -1
+  max_interval = 1
+  resp = extract_gmm_intervals(means, stds, width, min_interval, max_interval)
+  expect_equal(resp$start_locations, -1)
+  expect_equal(resp$finish_locations, 1)
+
+  # Scenario 2
+  means = 0
+  stds = 10
+  width = 1
+  min_interval = -1
+  max_interval = 1
+  resp = extract_gmm_intervals(means, stds, width, min_interval, max_interval)
+  expect_equal(resp$start_locations, -1)
+  expect_equal(resp$finish_locations, 1)
+
+  # Scenario 3
+  means = 0
+  stds = 0.5
+  width = 1
+  min_interval = -1
+  max_interval = 1
+  resp = extract_gmm_intervals(means, stds, width, min_interval, max_interval)
+  expect_equal(resp$start_locations, -1)
+  expect_equal(resp$finish_locations, 1)
+
+  # Scenario 4
+  means = c(0,5)
+  stds = c(1,4)
+  width = 1
+  min_interval = -1
+  max_interval = 10
+  resp = extract_gmm_intervals(means, stds, width, min_interval, max_interval)
+  expect_equal(resp$start_locations, c(-1,1))
+  expect_equal(resp$finish_locations, c(1,10))
+
+
+})
+
+
+context("MapperKD Unit Tests. Extract GMM Look Forward")
+test_that("MapperKD Unit Tests. Extract GMM Look Forward", {
+
+  # Selcted scenarios
+  # Only one interval
+  start_locations = 0
+  finish_locations = 10
+  resp = extract_gmm_look_forward(start_locations, finish_locations)
+  expect_equal(resp, 0)
+
+  # Two no overlap
+  start_locations = c(0,5)
+  finish_locations = c(2,7)
+  resp = extract_gmm_look_forward(start_locations, finish_locations)
+  expect_equal(resp, 0)
+
+  # Two single point overlap
+  start_locations = c(0,5)
+  finish_locations = c(5,10)
+  resp = extract_gmm_look_forward(start_locations, finish_locations)
+  expect_equal(resp, 1)
+
+  # Multiple intervals all overlap
+  start_locations = c(0,0,0,0,0)
+  finish_locations = c(1,1,1,1,1)
+  resp = extract_gmm_look_forward(start_locations, finish_locations)
+  expect_equal(resp, 4)
+
+  # Realistic scenario
+  start_locations = c(0,1,2,3)
+  finish_locations = c(2.5,2.9,2.8,4)
+  resp = extract_gmm_look_forward(start_locations, finish_locations)
+  expect_equal(resp, 2)
+
+
+})
+
+
+
+
+
 context("MapperKD Unit Tests. Error Scenarios")
 # Test scnearios that respond with errors
 test_that("MapperKD Unit Tests. Error Scenarios", {
@@ -371,6 +506,10 @@ test_that("MapperKD Unit Tests. Error Scenarios", {
 
   # TODO: Finish
 })
+
+
+
+
 
 
 

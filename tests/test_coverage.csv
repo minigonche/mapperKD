@@ -5,6 +5,10 @@ mapperKD_functions.R,mapperKD,complete,circle 1d,PARTIAL,test_maperkd.R,Selected
 mapperKD_functions.R,mapperKD,complete,circle 2d,PARTIAL,test_maperkd.R,Selected circle over 2 dimension. Missing different cluster functions
 mapperKD_functions.R,advance_coordinates,complete,,YES,test_maperkd_unit.R,4 selected cases
 mapperKD_functions.R,construct_step_grid,complete,,YES,test_maperkd_unit.R,"Several selected and random cases for 1,2 and n dimensions"
+mapperKD_functions.R,construct_step_grid_by_max_search,complete,,YES,test_maperkd_unit.R,Selected and random scenarios
+mapperKD_functions.R,extract_gmm_intervals,complete,,YES,test_maperkd_unit.R,Selected scenarios only
+mapperKD_functions.R,extract_gmm_look_forward,complete,,YES,test_maperkd_unit.R,Selected scenarios only
+,,,,,,
 cluster_functions.R,hierarchical_clustering,complete,,NO,,
 epidemiology_module.R,convert_to_graph,complete,,NO,,
 epidemiology_module.R,get_1_esqueleton_node_sizes,complete,,NO,,
