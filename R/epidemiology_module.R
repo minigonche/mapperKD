@@ -114,10 +114,13 @@ get_filter_dimension = function(one_squeleton_result)
 # plot_1_esqueleton
 #' Plots the given 1 Squeleton. The sizes of the nodes are proportional to the amount of elements they group.
 #' @param one_squeleton_result A one_squeleton object to plot
-#' @param layout The layout. This can either be a two column matrix with the x and y coordinates of each node of the 1 squeleton or the string 'grid' that calculates the layout using the method: construct_grid_graph_layout.
+#' @param layout The layout. This can either be a two column matrix with the x and y coordinates of each node of the 1 squeleton or one of the following strings:
+#'         - GRID: calculates the layout using the method: construct_grid_graph_layout.
+#'         - AUTO: The layout is calculated using the funciton: layout_nicely from the igraph package
+#'         Defualt value is GRID
 #' @param min_node_size Minimum node size. Default is 3.
 #' @param max_node_size Maximum node size. Default is 23.
-plot_1_esqueleton = function(one_squeleton_result, layout = 'grid', min_node_size = 3, max_node_size = 23)
+plot_1_esqueleton = function(one_squeleton_result, layout = 'GRID', min_node_size = 3, max_node_size = 23)
 {
   # Loads igraph
   require('igraph')
@@ -130,6 +133,8 @@ plot_1_esqueleton = function(one_squeleton_result, layout = 'grid', min_node_siz
   {
     if(toupper(layout) == 'GRID')
       final_layout = construct_grid_graph_layout(one_squeleton_result)
+    else if(toupper(layout) == 'AUTO')
+      final_layout = layout_nicely(g)
     else
       stop(paste('Unsupported layout option:', layout))
   }
@@ -140,8 +145,8 @@ plot_1_esqueleton = function(one_squeleton_result, layout = 'grid', min_node_siz
   node_size = get_1_esqueleton_node_sizes(one_squeleton_result)
   if(min(node_size) == max(node_size))
   {
-    print('All nodes are the same size. Assuming minimum for all.')
-    final_size = rep(min_node_size,length(node_size))
+    print('All nodes are the same size. Assuming mid point between min and max for all.')
+    final_size = rep((max_node_size - min_node_size)/2,length(node_size))
   }
   else
     final_size = (max_node_size - min_node_size)*(node_size- min(node_size))/(max(node_size) - min(node_size)) + min_node_size

@@ -356,17 +356,17 @@ test_that("MapperKD Unit Tests. Construct Step Grid by Max Search", {
   # Simple scenario
   max_search_possibilities = c(10)
   resp = construct_step_grid_by_max_search(max_search_possibilities)
-  expect_equal(resp[,1], 1:10)
+  expect_equal(resp[,1], c(-10:-1,1:10))
 
   # Simple scenario 2
   max_search_possibilities = c(2,2)
   resp = construct_step_grid_by_max_search(max_search_possibilities)
-  expect_equal(nrow(resp), prod(max_search_possibilities + 1) - 1)
+  expect_equal(nrow(resp), prod(2*max_search_possibilities + 1) - 1)
 
   # Scenario with zero
   max_search_possibilities = c(0,5,0)
   resp = construct_step_grid_by_max_search(max_search_possibilities)
-  expect_equal(resp[,2], 1:5)
+  expect_equal(resp[,2], c(-5:-1,1:5))
 
 
   # Random scenarios
@@ -379,7 +379,7 @@ test_that("MapperKD Unit Tests. Construct Step Grid by Max Search", {
     resp = construct_step_grid_by_max_search(max_search_possibilities)
 
     # Tests
-    expect_equal(nrow(resp), prod(max_search_possibilities + 1) - 1) # Amount of elements
+    expect_equal(nrow(resp), prod(2*max_search_possibilities + 1) - 1) # Amount of elements
     expect_equal(sum(rowSums(resp == rep(0, dim)) == dim), 0) # No zero
     expect_equal(sum(duplicated(data.frame(resp))), 0) # No duplicated
 
@@ -573,7 +573,107 @@ test_that("MapperKD Unit Tests. Extract the GMM Components. One Dimension", {
   expect_equal( resp$get_interval(1)$min, -2)
   expect_equal( resp$get_interval(2)$max, 2)
 
+  # Single dimension. Multiple clusters. All overlap
+  fil = runif(200)
+  filter = matrix(fil, nrow = length(fil), ncol = 1)
+  resp = get_gmm_components(filter, width = 100) # Very width clusters
 
+  expect_equal(resp$intervals- 1, max(resp$step_grid))
+
+  # Random
+  num_ite = 100*percetange_of_test
+
+  for(i in 1:num_ite)
+  {
+    # Single dimension. Multiple clusters. All overlap
+    fil  = runif(sample(20:200, 1))
+    filter = matrix(fil, nrow = length(fil), ncol = 1)
+    resp = get_gmm_components(filter, width = 100) # Very width clusters
+
+
+    expect_equal(resp$intervals- 1, max(resp$step_grid,0))
+  }
+
+
+
+
+
+
+
+
+})
+
+
+context("MapperKD Unit Tests. Extract the GMM Components. Two Dimension")
+test_that("MapperKD Unit Tests. Extract the GMM Components. Two Dimension", {
+
+
+  # Two dimensions. Single cluster both
+  filter = cbind(seq(-1, 1, by=0.1), seq(10, 12, by=0.1))
+  resp = get_gmm_components(filter, width = 2)
+  expect_equal(length(resp$intervals), 2)
+  expect_equal(resp$intervals[1], 1)
+  expect_equal(resp$intervals[2], 1)
+  expect_equal(length(resp$step_grid), 0)
+  expect_equal( resp$get_interval(c(1,1))$min, c(-1,10))
+  expect_equal( resp$get_interval(c(1,1))$max, c(1,12))
+
+
+
+  # Two dimensions. Single cluster one, non overlapping clusters the other
+  filter = cbind(seq(-1, 1, by=0.1), (c(seq(-2, -1, by=0.1), seq(1.1, 2, by=0.1))))
+  resp = get_gmm_components(filter, width = 2)
+  expect_equal(length(resp$intervals), 2)
+  expect_equal(resp$intervals[1], 1)
+  expect_equal(resp$intervals[2], 2)
+  expect_equal(length(resp$step_grid), 0)
+  expect_equal( resp$get_interval(c(1,1))$min, c(-1,-2))
+  expect_equal( resp$get_interval(c(1,2))$max, c(1,2))
+
+
+  # Two dimensions. Single cluster one, overlapping clusters the other
+  filter = cbind(seq(-1, 1, by=0.1), (c(seq(-2, -1, by=0.1), seq(1.1, 2, by=0.1))))
+  resp = get_gmm_components(filter, width = 100)
+  expect_equal(length(resp$intervals), 2)
+  expect_equal(resp$intervals[1], 1)
+  expect_equal(resp$intervals[2], 2)
+  expect_equal(length(resp$step_grid), 2)
+  expect_equal(resp$step_grid[1,], c(0,1))
+  expect_equal( resp$get_interval(c(1,1))$min, c(-1,-2))
+  expect_equal( resp$get_interval(c(1,2))$max, c(1,2))
+
+
+  # Two dimensions. Overlapping clusters both
+  filter = cbind((c(seq(-5, -4, by=0.1), seq(3.1, 4, by=0.1))), (c(seq(-2, -1, by=0.1), seq(1.1, 2, by=0.1))))
+  resp = get_gmm_components(filter, width = 100)
+  expect_equal(length(resp$intervals), 2)
+  expect_equal(resp$intervals[1], 2)
+  expect_equal(resp$intervals[2], 2)
+  expect_equal(length(resp$step_grid), 6)
+  expect_equal( resp$get_interval(c(1,1))$min, c(-5,-2))
+  expect_equal( resp$get_interval(c(2,2))$max, c(4,2))
+
+
+  # Two dimensions. Multiple clusters. All overlap
+  filter = cbind(runif(200), runif(200))
+  resp = get_gmm_components(filter, width = 100) # Very width clusters
+
+  expect_equal(prod(resp$intervals) - 1, nrow(resp$step_grid))
+
+
+  # Random
+  num_ite = 100*percetange_of_test
+
+  for(i in 1:num_ite)
+  {
+    # Two dimensions. Multiple clusters. All overlap
+    n_elements = sample(20:200, 1)
+    filter = cbind( runif(n_elements),  runif(n_elements))
+    resp = get_gmm_components(filter, width = 100) # Very width clusters
+
+    expect_equal(prod(resp$intervals) - 1, nrow(resp$step_grid))
+
+  }
 })
 
 

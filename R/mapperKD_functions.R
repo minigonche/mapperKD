@@ -54,7 +54,6 @@ library('sets')
 #'
 #' @export
 #'
-#' @export
 #'
 mapperKD = function(k,
                     distance,
@@ -96,7 +95,7 @@ mapperKD = function(k,
   {
     # Intervals
     if(is.null(num_intervals) || is.na(num_intervals))
-      stop('Number of Intervals cannot be NULL')
+      stop('If interval_scheme is FIXED, number of Intervals cannot be NULL')
 
     if(k != 1 && length(num_intervals) == 1)
     {
@@ -113,7 +112,7 @@ mapperKD = function(k,
 
     # Overlap
     if(is.null(overlap) || is.na(overlap))
-      stop('Overlap cannot be NULL')
+      stop('If interval_scheme is FIXED, overlap cannot be NULL')
 
     if(k != 1 && length(overlap) == 1)
     {
@@ -130,10 +129,10 @@ mapperKD = function(k,
   if( interval_scheme == "GMM")
   {
     if(is.null(width))
-      print("Width cannot be NULL")
+      stop("Width cannot be NULL")
 
     if(width <= 0)
-      print("with has to be positive")
+      stop("with has to be positive")
   }
 
   # Distance
@@ -168,7 +167,6 @@ mapperKD = function(k,
     intervals = response[['intervals']]
     get_interval = response[['get_interval']]
     step_grid = response[['step_grid']]
-
 
   }
   else
@@ -291,7 +289,7 @@ mapperKD = function(k,
   #   Iterates over all intervals again and checks only intersection with possible intervals
 
   #   Starts the degree matrix
-  degree_matrix = matrix(0, nrow = num_nodes, ncol = num_nodes)
+  degree_matrix = matrix(-1, nrow = num_nodes, ncol = num_nodes)
 
   #   Starts the coordinates
   coordinates = rep(1,k)
@@ -300,7 +298,7 @@ mapperKD = function(k,
   elements_in_node_as_set = lapply(elements_in_node, as.set)
 
   # Loop ends when all coordinates get to the last value (the number of intervals)
-  while(any(coordinates != intervals))
+  repeat
   {
     # Gets current nodes
     current_nodes = nodes_per_interval[[coordinates]]
@@ -316,10 +314,13 @@ mapperKD = function(k,
     # Calculates possible coordinates
     possible_coordinates = sweep(step_grid, 2, coordinates, "+")
 
-    # Removes thes ones that exceed the mas size
+    # Removes thes ones that exceed the max size
     possible_indices = rowSums(sweep(possible_coordinates, 2, intervals, FUN = "<=")) == k
     possible_coordinates = matrix(possible_coordinates[possible_indices,], nrow = sum(possible_indices), ncol = k)
 
+    # Or that are below one
+    possible_indices = rowSums(sweep(possible_coordinates, 2, rep(1,k), FUN = ">=")) == k
+    possible_coordinates = matrix(possible_coordinates[possible_indices,], nrow = sum(possible_indices), ncol = k)
 
     # If empty, continunes
     if(length(possible_coordinates) == 0)
@@ -334,11 +335,6 @@ mapperKD = function(k,
 
       # Gets neighbor interval
       neighbor_coordinates = possible_coordinates[i,]
-
-      # Continues if outside interval grid
-      #if(any(neighbor_coordinates > intervals))
-      #  next
-
       neighbor_nodes = nodes_per_interval[[neighbor_coordinates]]
 
       # If empty, continunes
@@ -349,12 +345,18 @@ mapperKD = function(k,
       {
         for(l in neighbor_nodes)
         {
-          degree_matrix[l,v] = length(set_intersection(elements_in_node_as_set[[v]],elements_in_node_as_set[[l]]))
-          degree_matrix[v,l] = degree_matrix[l,v]
+          if(degree_matrix[l,v] != -1) # Checks if it has been calculated before
+            degree_matrix[v,l] = degree_matrix[l,v]
+          else
+            degree_matrix[v,l] = length(set_intersection(elements_in_node_as_set[[v]],elements_in_node_as_set[[l]]))
         }
       }
-
     }
+
+    # Stop criteria
+    # Finished the last interval
+    if(all(coordinates == intervals))
+      break
 
     # Advances the coordinates
     # ------------------------
@@ -363,6 +365,9 @@ mapperKD = function(k,
 
 
   }# Finish adjacency and degrre loop
+
+  # All values that stayed -1 is because there was no overlap in filter, and should not intersect in any points
+  degree_matrix[degree_matrix == -1] = 0
 
   #   Adjacency matrix is simply the sign of the degree matrix
   adjacency_matrix = sign(degree_matrix)
@@ -470,7 +475,6 @@ construct_fixed_step_grid = function(filter, intervals, overlap)
   window_size = (filter_max - filter_min)/(intervals - (intervals - 1)*overlap/100)
 
   # Depending on overlap, non adjacent intersection is possible
-
   max_search_possibilities = ceiling(1/(1 - overlap/100)) - 1
   max_search_possibilities = pmin(max_search_possibilities, intervals) # Should not check further than the total amount of intervals
 
@@ -494,14 +498,18 @@ construct_step_grid_by_max_search = function(max_search_possibilities)
 
 
   # Creates the search possibilities
-  search_possibilities = lapply(1:length(max_search_possibilities), function(i){0:max_search_possibilities[i]})
+  search_possibilities = lapply(1:length(max_search_possibilities), function(i){(-1*max_search_possibilities[i]):max_search_possibilities[i]})
 
   #   The steps grid (structure to detect levels where possible intersection might occur)
   step_grid = as.matrix(expand.grid(search_possibilities))
   colnames(step_grid) <- NULL
 
   #   Removes itself from the possible steps
-  step_grid = as.matrix(step_grid[rowSums(step_grid) > 0,])
+  step_grid = as.matrix(step_grid[rowSums(abs(step_grid)) > 0,])
+
+  # For single row the method above returns a columns not a row
+  if(dim(step_grid)[2] != length(max_search_possibilities))
+    step_grid = t(step_grid)
 
   return(step_grid)
 

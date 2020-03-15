@@ -1,5 +1,3 @@
-require('igraph')
-
 #' @author Felipe González-Casabianca
 #' Mapper Tests
 
@@ -10,6 +8,8 @@ percetange_of_test = 1
 # Support Funtion
 is_circle = function(one_squeleton)
 {
+  require('igraph')
+
   # Method that checks if the result graph forms a circle or not
   # Checks that all nodes have exactly two neighbors and that there is one connected component
 
@@ -24,6 +24,23 @@ is_circle = function(one_squeleton)
     return(FALSE)
 
   # Is Circle
+  return(TRUE)
+}
+
+is_clique = function(one_squeleton)
+{
+  require('igraph')
+  # Method that checks if the result graph forms a circle or not
+  # Checks that all nodes have exactly two neighbors and that there is one connected component
+
+  # Constructs the graph
+  g = graph.adjacency(one_squeleton$adjacency_matrix, mode = 'undirected')
+
+  # Checks that all nodes have every node as neighbor
+  if(any(degree(g) != (vcount(g) - 1)))
+    return(FALSE)
+
+  # Is clique
   return(TRUE)
 }
 
@@ -182,6 +199,115 @@ test_that("Toy Examples. 2 Dimension. Circle 1D", {
 
 
   expect_true(is_circle(res))
+
+})
+
+
+
+# -----------------------------------
+# --------- GMM Tests ---------------
+# -----------------------------------
+
+
+
+
+context("MapperKD Tests. Toy Examples. GMM. Clique 1 Dimensional Filter")
+
+# Toy examples
+test_that("MapperKD Tests. Toy Examples. GMM. Clique 1 Dimensional Filter", {
+
+  # Clique. Filter into single interval
+  # Result should be a single node
+  filter = seq(-1, 1, by=0.1)
+
+  res = mapperKD(k = 1,
+                 distance = matrix(rep(1,length(filter)**2), ncol = length(filter)),
+                 filter = filter,
+                 interval_scheme = "GMM",
+                 width = 2,
+                 clustering_method = cluster_all)
+
+  expect_true(is_clique(res))
+
+  # Result should havce multiple overlapping intervals and clique of multiple nodes
+  filter = runif(200)
+  res = mapperKD(k = 1,
+                 distance = matrix(rep(1,length(filter)**2), ncol = length(filter)),
+                 filter = filter,
+                 interval_scheme = "GMM",
+                 width = 100,
+                 clustering_method = cluster_all)
+
+  expect_true(is_clique(res))
+
+
+  # random scenarios with large width
+  num_ite = 100*percetange_of_test
+
+  for(i in 1:num_ite)
+  {
+    filter = runif(sample(20:200, 1))
+
+    res = mapperKD(k = 1,
+                   distance = matrix(rep(1,length(filter)**2), ncol = length(filter)),
+                   filter = filter,
+                   interval_scheme = "GMM",
+                   width = 100,
+                   clustering_method = cluster_all)
+
+    expect_true(is_clique(res))
+  }
+
+})
+
+
+context("MapperKD Tests. Toy Examples. GMM. Clique 2 Dimensional Filter")
+
+# Toy examples
+test_that("MapperKD Tests. Toy Examples. GMM. Clique 2 Dimensional Filter", {
+
+  # Clique. Filter into single interval
+  # Result should be a single node
+  filter = cbind(seq(-1, 1, by=0.1), seq(-1, 1, by=0.1))
+
+  res = mapperKD(k = 2,
+                 distance = matrix(rep(1,length(filter[,1])**2), ncol = length(filter[,1])),
+                 filter = filter,
+                 interval_scheme = "GMM",
+                 width = 2,
+                 clustering_method = cluster_all)
+
+  expect_true(is_clique(res))
+
+  # Result should havce multiple overlapping intervals and clique of multiple nodes
+  filter = cbind(runif(50),runif(50))
+  res = mapperKD(k = 2,
+                 distance = matrix(rep(1,length(filter[,1])**2), ncol = length(filter[,1])),
+                 filter = filter,
+                 interval_scheme = "GMM",
+                 width = 100,
+                 clustering_method = cluster_all)
+
+
+  expect_true(is_clique(res))
+
+
+  # random scenarios with large width
+  num_ite = 100*percetange_of_test
+
+  for(i in 1:num_ite)
+  {
+    filter = runif(sample(20:200, 1))
+
+    res = mapperKD(k = 1,
+                   distance = matrix(rep(1,length(filter)**2), ncol = length(filter)),
+                   filter = filter,
+                   interval_scheme = "GMM",
+                   width = 100,
+                   clustering_method = cluster_all)
+
+    expect_true(is_clique(res))
+  }
 
 })
 
