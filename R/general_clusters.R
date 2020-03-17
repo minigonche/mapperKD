@@ -19,10 +19,12 @@
 # Clusters all point into a single cluster
 cluster_all = function(distance_matrix)
 {
+
   if(length(distance_matrix) == 1)
     times = 1
   else
     times = dim(distance_matrix)[1]
+
 
   return(rep(1, times))
 }
@@ -38,6 +40,18 @@ cluster_none = function(distance_matrix)
   return(1:times)
 }
 
+# Creates a random clustering scheme
+cluster_random = function(distance_matrix)
+{
+  if(length(distance_matrix) == 1)
+    times = 1
+  else
+    times = dim(distance_matrix)[1]
+
+  k = sample(1:10, 1)
+
+  return(sample(1:k, times, replace = TRUE))
+}
 
 # Hierarchical Clustering
 #' Preforms Hierarchical Clustering

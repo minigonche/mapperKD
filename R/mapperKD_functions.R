@@ -23,7 +23,7 @@ library('sets')
 #' @param clustering_method clustering method to be used for each pre-image. If the parameter \code{local_distance} is set to \code{TRUE}, the given funtion must receive as a parameter a distance matrix. If the parameter \code{local_distance} is set to \code{FALSE}, the given funtion must receive as a parameter a list of indices (The indices of the corresponding interval). In any case, it mus return an array with the corresiponding number cluster for each of the given points. Clusters numbers must start with 1 and have no gaps between them. Default is: hierarchical_clustering
 #' @param local_distance a boolean indicating if the algorithm should construct the distance function based on the data at every pre-image. Usefull for low RAM enviorments or specific clustering. Default value is \code{FALSE}
 #'
-#' @return An object of class \code{one_squeleton} which is composed of the following items:
+#' @return An object of class \code{one_skeleton} which is composed of the following items:
 #'
 #' \code{adjacency_matrix} (adjacency matrix for the nodes),
 #' \code{degree_matrix} (degree matrix for the nodes (the number of points in the intersection of nodes)),
@@ -40,7 +40,7 @@ library('sets')
 #' data_points = data.frame( x=c(cos(1:50) - 1, cos(1:50) + 1), y=sin(1:100) )
 #' plot(data_points)
 #' # Executes mapper
-#' one_squeleton_result = mapperKD(k = 1,
+#' one_skeleton_result = mapperKD(k = 1,
 #'                                 distance = as.matrix(dist(data_points)),
 #'                                 filter = data_points$x,
 #'                                 interval_scheme = "FIXED",
@@ -48,8 +48,8 @@ library('sets')
 #'                                 overlap = c(50),
 #'                                 clustering_method = hierarchical_clustering)
 #' # Visualize the result
-#' g = convert_to_graph(one_squeleton_result)
-#' V(g)$size = sqrt(get_1_esqueleton_node_sizes(one_squeleton_result)*30)
+#' g = convert_to_graph(one_skeleton_result)
+#' V(g)$size = sqrt(get_1_eskeleton_node_sizes(one_skeleton_result)*30)
 #' plot(g)
 #'
 #' @export
@@ -168,6 +168,7 @@ mapperKD = function(k,
     get_interval = response[['get_interval']]
     step_grid = response[['step_grid']]
 
+
   }
   else
     stop(paste("The interval_scheme:", interval_scheme, "is not supported"))
@@ -235,11 +236,14 @@ mapperKD = function(k,
         }
         else if(!local_distance) # Global distance
         {
+
           # -Extracts the current matrix
           current_matrix = distance[interval_indices,interval_indices]
 
           # Excecutes the clustering algorithm
           clusters_of_interval = clustering_method(current_matrix)
+
+
         }
         else # Local distance
         {
@@ -264,6 +268,7 @@ mapperKD = function(k,
         points_per_interval[[coordinates]] = interval_indices
     }
 
+
     # Stop criteria
     # Finished the last interval
     if(all(coordinates == intervals))
@@ -278,8 +283,10 @@ mapperKD = function(k,
 
 
 
-
   }# Finish interval loop
+
+
+
 
   num_nodes = length(elements_in_node)
 
@@ -303,14 +310,6 @@ mapperKD = function(k,
     # Gets current nodes
     current_nodes = nodes_per_interval[[coordinates]]
 
-    # If empty, continunes
-    if(length(current_nodes) == 0)
-    {
-      coordinates = advance_coordinates(coordinates, intervals)
-      next
-    }
-
-
     # Calculates possible coordinates
     possible_coordinates = sweep(step_grid, 2, coordinates, "+")
 
@@ -323,36 +322,34 @@ mapperKD = function(k,
     possible_coordinates = matrix(possible_coordinates[possible_indices,], nrow = sum(possible_indices), ncol = k)
 
     # If empty, continunes
-    if(length(possible_coordinates) == 0)
-    {
-      coordinates = advance_coordinates(coordinates, intervals)
-      next
-    }
-
-    #   Iterates over the possible adjacent intervals
-    for(i in 1:nrow(possible_coordinates))
+    if(length(possible_coordinates) > 0 && length(current_nodes) > 0)
     {
 
-      # Gets neighbor interval
-      neighbor_coordinates = possible_coordinates[i,]
-      neighbor_nodes = nodes_per_interval[[neighbor_coordinates]]
-
-      # If empty, continunes
-      if(length(neighbor_nodes) == 0)
-        next
-
-      for(v in current_nodes)
+      #   Iterates over the possible adjacent intervals
+      for(i in 1:nrow(possible_coordinates))
       {
-        for(l in neighbor_nodes)
+
+        # Gets neighbor interval
+        neighbor_coordinates = possible_coordinates[i,]
+        neighbor_nodes = nodes_per_interval[[neighbor_coordinates]]
+
+        # If empty, continunes
+        if(length(neighbor_nodes) == 0)
+          next
+
+        for(v in current_nodes)
         {
-          if(degree_matrix[l,v] != -1) # Checks if it has been calculated before
-            degree_matrix[v,l] = degree_matrix[l,v]
-          else
-            degree_matrix[v,l] = length(set_intersection(elements_in_node_as_set[[v]],elements_in_node_as_set[[l]]))
+          for(l in neighbor_nodes)
+          {
+            if(degree_matrix[l,v] != -1) # Checks if it has been calculated before
+              degree_matrix[v,l] = degree_matrix[l,v]
+            else
+              degree_matrix[v,l] = length(set_intersection(elements_in_node_as_set[[v]],elements_in_node_as_set[[l]]))
+          }
         }
       }
-    }
 
+    }
     # Stop criteria
     # Finished the last interval
     if(all(coordinates == intervals))
@@ -373,7 +370,7 @@ mapperKD = function(k,
   adjacency_matrix = sign(degree_matrix)
 
   # Constructs the response
-  # Object of type 1_squeleton
+  # Object of type 1_skeleton
   response = list()
   response$adjacency_matrix = sign(degree_matrix)
   response$degree_matrix = degree_matrix
@@ -550,8 +547,7 @@ get_gmm_components = function(filter, width = 2)
   for(i in 1:k)
   {
     current_set = data.frame(x = filter[,i])
-    min_filter = min(current_set)
-    max_filter = max(current_set)
+
 
     # Excecutes the clustering scheme (GMM)
     BIC = mclustBIC(current_set, verbose = FALSE)
@@ -560,8 +556,12 @@ get_gmm_components = function(filter, width = 2)
     # Extracts the result
     num_clusters = clust_res$G
 
-
+    # Extracts the Means
     means = as.vector(clust_res$parameters$mean)
+
+    # Calculates the min and max by clust
+    min_in_interval = sapply(1:num_clusters, function(clu){min(means[clu], current_set[clust_res$classification == clu,])})
+    max_in_interval = sapply(1:num_clusters, function(clu){max(means[clu], current_set[clust_res$classification == clu,])})
 
 
     var_model_name = clust_res$parameters$variance$modelName
@@ -575,7 +575,7 @@ get_gmm_components = function(filter, width = 2)
 
     # Calculates the intervals
 
-    resp = extract_gmm_intervals(means, stds, width, min_filter, max_filter)
+    resp = extract_gmm_intervals(means, stds, width, min_in_interval, max_in_interval)
 
 
     # Adds the start and finish
@@ -625,28 +625,34 @@ get_gmm_components = function(filter, width = 2)
 #' @param means Numeric vector with the means of the clusters
 #' @param stds Numeric vector with the standard deviation of the clusters
 #' @param width The desired width of the intervals as denoted above.
-#' @param min_interval The lowest value in the current filter.
-#' @param max_interval The largest value in the current filter.
+#' @param min_in_interval The lowest value in each of the intervals.
+#' @param max_in_interval The largest value in each of the intervals.
 #' @return A list with the following objects:
 #'        - start_locations: numeric vector with the start of the intervals
 #'        - finish_locations: numeric vector with the end of the intervals
-extract_gmm_intervals = function(means, stds, width, min_interval, max_interval)
+extract_gmm_intervals = function(means, stds, width, min_in_interval, max_in_interval)
 {
 
   num_clusters = length(means)
+
+  # Minimum and maximum of all intervals
+  global_min = min(min_in_interval)
+  global_max = max(max_in_interval)
 
   # Sorts the values so means only increase
   sorted_indexes = order(means)
   means = means[sorted_indexes]
   stds = stds[sorted_indexes]
+  min_in_interval = min_in_interval[sorted_indexes]
+  max_in_interval = max_in_interval[sorted_indexes]
 
-  # Creates the start and finish vectors according to the width
-  start_locations = sapply(1:num_clusters, function(i){max( means[i] - width*stds[i] , min_interval)})
-  finish_locations = sapply(1:num_clusters, function(i){min( means[i] + width*stds[i] , max_interval)})
+  # Creates the start and finish vectors according to the width. If width does nos cover the whole cluster, then the border are adjusted to fit it.
+  start_locations = sapply(1:num_clusters, function(i){min( means[i] - width*stds[i] , min_in_interval[i])})
+  finish_locations = sapply(1:num_clusters, function(i){max( means[i] + width*stds[i] , max_in_interval[i])})
 
-  # Adjust the first and final so all points are included.
-  start_locations[1] = min_interval
-  finish_locations[length(finish_locations)] = max_interval
+  # Adjust so nothing goes before or beyond the filter values
+  start_locations[start_locations < global_min] = global_min
+  finish_locations[finish_locations > global_max] = global_max
 
   # Response
   response = list()

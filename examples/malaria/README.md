@@ -12,27 +12,29 @@ meta_df = read.csv('data/data.csv', stringsAsFactors = FALSE)
 distance_matrix = read.csv('data/matrix.csv', header = FALSE)
 ```
 
-## Mapper Graph (One Squeleton)
+## Mapper Graph (One Skeleton)
 
 Excecutes the mapper algorithm with the following parameters
 * *Distance Matrix:* distance constructed using Identity by Descent (IBD)
 * *Filter Function:* The date of occurence (in the data, this corresponds to the column: day_ocurrence)
+* *Filter Scheme:* The filter scheme to use. Fiexed overlapping intervals
 * *Number of Intervals*: 20
 * *Percentage of Overlap:* 30
 * *Clustering Method:* Hierarchical Clustering
 
 ```{r }
 # Applies the Algorithm
-one_squeleton_result = mapperKD(k = 1, # <- Number of dimensions
+one_skeleton_result = mapperKD(k = 1, # <- Number of dimensions
                                 distance = distance_matrix, # <- Distance Matrix
                                 filter = meta_df$day_ocurrence, # <- Filter
+                                interval_scheme = "FIXED", # <- Interval Scheme
                                 num_intervals = c(20), # <-number of intervals
                                 overlap = c(30), # <- Percentage of overlap
                                 clustering_method = function(x){hierarchical_clustering(x,  method = 'single', height = 0.05)})
 
 
-# Plots the 1 Esqueleton (graph)
-plot_1_esqueleton(one_squeleton_result)
+# Plots the 1 Eskeleton (graph)
+plot_1_eskeleton(one_skeleton_result)
 ```
 
 ![Graph](img/mapper_graph.png)
@@ -43,7 +45,7 @@ With the epidemiology module, the PIN can be constructed and ploted directly fro
 ```{r }
 # Plots the point intersection network
 groups = sapply(meta_df$GROUP, toString)
-plot_intersection_network(one_squeleton_result, groups = groups, max_node_size = 6)
+plot_intersection_network(one_skeleton_result, groups = groups, max_node_size = 6)
 ```
 
 ![PIN](img/pin.png)
@@ -53,10 +55,12 @@ Plots the PIN over the geographical coordinates, focusing on the samples in Colo
 ```{r }
 # Plot intersection network over colombia
 only_colombia =  (1:dim(meta_df)[1])[meta_df$lon < - 70]
-plot_intersection_network_over_map(one_squeleton_result, 
-                                   lon  = meta_df$lon, 
-                                   lat = meta_df$lat, 
+plot_intersection_network_over_map(one_skeleton_result,
+                                   lon  = meta_df$lon,
+                                   lat = meta_df$lat,
                                    groups = groups,
+                                   arrow_color = 'DESTINATION',
+                                   arrow_transparency = 0.3,
                                    focus_on = only_colombia)
 ```
 ![PIN Over Colombia](img/pin_geo.png)

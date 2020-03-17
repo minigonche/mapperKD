@@ -88,7 +88,7 @@ filter_geotype_file = function(input_file_location, include_ids, output_file_loc
 
 }
 
-input_file_location = '/home/estudiante/Documentos/mapperKD/tests/testthat/test_files/pf3k_Ghana_13.txt'
-output_file_location = '/home/estudiante/Documentos/mapperKD/tests/testthat/test_files/pf3k_Ghana_13_filtered.txt'
-include_ids = c( "PF0008-C", "PF0028-C", "PF0037-C")
-filter_geotype_file(input_file_location, include_ids, output_file_location)
+#input_file_location = '/home/estudiante/Documentos/mapperKD/tests/testthat/test_files/pf3k_Ghana_13.txt'
+#output_file_location = '/home/estudiante/Documentos/mapperKD/tests/testthat/test_files/pf3k_Ghana_13_filtered.txt'
+#include_ids = c( "PF0008-C", "PF0028-C", "PF0037-C")
+#filter_geotype_file(input_file_location, include_ids, output_file_location)

@@ -31,17 +31,18 @@ plot(data_points)
 
 ```{r }
 # Executes mapper
-one_squeleton_result = mapperKD(k = 1,
+one_skeleton_result = mapperKD(k = 1,
                                 distance = as.matrix(dist(data_points)),
                                 filter = data_points$x,
-                                intervals = c(12),
+                                interval_scheme = "FIXED",
+                                num_intervals = c(12),
                                 overlap = c(50),
                                 clustering_method = hierarchical_clustering,
                                 local_distance = FALSE,
                                 data = NA)
 # Visualize the result
-g = convert_to_graph(one_squeleton_result)
-V(g)$size = sqrt(get_1_esqueleton_node_sizes(one_squeleton_result)*30)
+g = convert_to_graph(one_skeleton_result)
+V(g)$size = sqrt(get_1_skeleton_node_sizes(one_skeleton_result)*30)
 plot(g)
 ```
 ![output_graph](img/example_graph.png)

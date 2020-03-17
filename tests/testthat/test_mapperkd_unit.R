@@ -394,7 +394,9 @@ test_that("MapperKD Unit Tests. Construct Step Grid by Max Search", {
 
 context("MapperKD Unit Tests. Extract GMM Intervals")
 # Test scnearios that respond with errors
-test_that("MapperKD Unit Tests. Extract GMM Intervalsh", {
+test_that("MapperKD Unit Tests. Extract GMM Intervals", {
+
+  # Probar que todos los puntos se encuentran en al menos algun intervalo
 
   # Selcted scenarios
   # Scenario 1
@@ -417,6 +419,8 @@ test_that("MapperKD Unit Tests. Extract GMM Intervalsh", {
   expect_equal(resp$start_locations, -1)
   expect_equal(resp$finish_locations, 1)
 
+
+
   # Scenario 3
   means = 0
   stds = 0.5
@@ -431,11 +435,34 @@ test_that("MapperKD Unit Tests. Extract GMM Intervalsh", {
   means = c(0,5)
   stds = c(1,4)
   width = 1
-  min_interval = -1
-  max_interval = 10
+  min_interval = c(-1,3)
+  max_interval = c(0,10)
   resp = extract_gmm_intervals(means, stds, width, min_interval, max_interval)
   expect_equal(resp$start_locations, c(-1,1))
   expect_equal(resp$finish_locations, c(1,10))
+
+  # Scenario 5
+  # Width to large, all intervals equal
+  means = c(0,5,10)
+  stds = c(1,1,1)
+  width = 100
+  min_interval = c(-1,3,8)
+  max_interval = c(1,6,12)
+  resp = extract_gmm_intervals(means, stds, width, min_interval, max_interval)
+  expect_equal(resp$start_locations, c(-1,-1,-1))
+  expect_equal(resp$finish_locations, c(12,12,12))
+
+
+  # Width to small, all intervals are min and max
+  means = c(0,5,10)
+  stds = c(1,1,1)
+  width = 0.00000001
+  min_interval = c(-1,3,8)
+  max_interval = c(1,6,12)
+  resp = extract_gmm_intervals(means, stds, width, min_interval, max_interval)
+  expect_equal(resp$start_locations, c(-1,3,8))
+  expect_equal(resp$finish_locations, c(1,6,12))
+
 
 
 })
@@ -569,7 +596,7 @@ test_that("MapperKD Unit Tests. Extract the GMM Components. One Dimension", {
   resp = get_gmm_components(filter, width = 100) # Very width clusters
   expect_equal(length(resp$intervals), 1)
   expect_equal(resp$intervals[1], 2)
-  expect_equal(length(resp$step_grid), 1)
+  expect_equal(length(resp$step_grid), 2)
   expect_equal( resp$get_interval(1)$min, -2)
   expect_equal( resp$get_interval(2)$max, 2)
 
@@ -637,8 +664,9 @@ test_that("MapperKD Unit Tests. Extract the GMM Components. Two Dimension", {
   expect_equal(length(resp$intervals), 2)
   expect_equal(resp$intervals[1], 1)
   expect_equal(resp$intervals[2], 2)
-  expect_equal(length(resp$step_grid), 2)
-  expect_equal(resp$step_grid[1,], c(0,1))
+  expect_equal(nrow(resp$step_grid), 2)
+  expect_equal(resp$step_grid[1,], c(0,-1))
+  expect_equal(resp$step_grid[2,], c(0,1))
   expect_equal( resp$get_interval(c(1,1))$min, c(-1,-2))
   expect_equal( resp$get_interval(c(1,2))$max, c(1,2))
 
@@ -649,7 +677,7 @@ test_that("MapperKD Unit Tests. Extract the GMM Components. Two Dimension", {
   expect_equal(length(resp$intervals), 2)
   expect_equal(resp$intervals[1], 2)
   expect_equal(resp$intervals[2], 2)
-  expect_equal(length(resp$step_grid), 6)
+  expect_equal(nrow(resp$step_grid), 8)
   expect_equal( resp$get_interval(c(1,1))$min, c(-5,-2))
   expect_equal( resp$get_interval(c(2,2))$max, c(4,2))
 
@@ -658,7 +686,7 @@ test_that("MapperKD Unit Tests. Extract the GMM Components. Two Dimension", {
   filter = cbind(runif(200), runif(200))
   resp = get_gmm_components(filter, width = 100) # Very width clusters
 
-  expect_equal(prod(resp$intervals) - 1, nrow(resp$step_grid))
+  expect_equal(prod(2*resp$intervals - 1) - 1, nrow(resp$step_grid))
 
 
   # Random
@@ -671,7 +699,7 @@ test_that("MapperKD Unit Tests. Extract the GMM Components. Two Dimension", {
     filter = cbind( runif(n_elements),  runif(n_elements))
     resp = get_gmm_components(filter, width = 100) # Very width clusters
 
-    expect_equal(prod(resp$intervals) - 1, nrow(resp$step_grid))
+    expect_equal(prod(2*resp$intervals - 1) - 1, nrow(resp$step_grid))
 
   }
 })

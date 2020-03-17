@@ -6,7 +6,7 @@ percetange_of_test = 1
 
 
 # Support Funtion
-is_circle = function(one_squeleton)
+is_circle = function(one_skeleton)
 {
   require('igraph')
 
@@ -14,7 +14,7 @@ is_circle = function(one_squeleton)
   # Checks that all nodes have exactly two neighbors and that there is one connected component
 
   # Constructs the graph
-  g = graph.adjacency(one_squeleton$adjacency_matrix, mode = 'undirected')
+  g = graph.adjacency(one_skeleton$adjacency_matrix, mode = 'undirected')
 
   # Checks that all nodes have two neighbors
   if(any(degree(g) != 2))
@@ -27,14 +27,14 @@ is_circle = function(one_squeleton)
   return(TRUE)
 }
 
-is_clique = function(one_squeleton)
+is_clique = function(one_skeleton)
 {
   require('igraph')
   # Method that checks if the result graph forms a circle or not
   # Checks that all nodes have exactly two neighbors and that there is one connected component
 
   # Constructs the graph
-  g = graph.adjacency(one_squeleton$adjacency_matrix, mode = 'undirected')
+  g = graph.adjacency(one_skeleton$adjacency_matrix, mode = 'undirected')
 
   # Checks that all nodes have every node as neighbor
   if(any(degree(g) != (vcount(g) - 1)))
@@ -43,6 +43,52 @@ is_clique = function(one_squeleton)
   # Is clique
   return(TRUE)
 }
+
+
+context("MapperKD Tests. Complete Set Coverage. 1 Dimension")
+# Set Coverage
+test_that("Toy Examples. 1 Dimension", {
+
+
+  # Random sample
+  num_points = 500
+  data = runif(num_points, -1*num_points, num_points)
+  filter = data
+  num_intervals = 10
+  overlap = 70
+
+  res = mapperKD(k = 1,
+                 distance = as.matrix(dist(data)),
+                 filter = filter,
+                 interval_scheme = "FIXED",
+                 num_intervals = num_intervals,
+                 overlap = overlap,
+                 clustering_method = cluster_random)
+
+  expect_equal(1:num_points, sort(unique(unlist(res$points_in_nodes))))
+  expect_equal(1:num_points, sort(unique(unlist(res$points_per_interval))))
+
+
+  # Random sample plus outliers
+  num_points = 500 + 2
+  data = c(-200, runif(num_points - 2, -1*10, 10), 200)
+  filter = data
+  num_intervals = 12
+  overlap = 30
+
+  res = mapperKD(k = 1,
+                 distance = as.matrix(dist(data)),
+                 filter = filter,
+                 interval_scheme = "FIXED",
+                 num_intervals = num_intervals,
+                 overlap = overlap,
+                 clustering_method = cluster_random)
+
+  expect_equal(1:num_points, sort(unique(unlist(res$points_in_nodes))))
+  expect_equal(1:num_points, sort(unique(unlist(res$points_per_interval))))
+
+})
+
 
 
 context("MapperKD Tests. Toy Examples. 1 Dimension")
@@ -208,6 +254,128 @@ test_that("Toy Examples. 2 Dimension. Circle 1D", {
 # --------- GMM Tests ---------------
 # -----------------------------------
 
+
+context("MapperKD Tests. GMM Complete Set Coverage. 1 Dimension")
+# Set Coverage
+test_that("Toy Examples. Complete Set Coverage 1 Dimension", {
+
+
+  # Random sample
+  num_points = 500
+  data = runif(num_points, -1*num_points, num_points)
+  filter = data
+  num_intervals = 10
+  overlap = 70
+
+  res = mapperKD(k = 1,
+                 distance = as.matrix(dist(data)),
+                 filter = filter,
+                 interval_scheme = "GMM",
+                 width = 0.1,
+                 clustering_method = cluster_random)
+
+  expect_equal(1:num_points, sort(unique(unlist(res$points_in_nodes))))
+  expect_equal(1:num_points, sort(unique(unlist(res$points_per_interval))))
+
+
+  # Random sample plus outliers
+  num_points = 500 + 2
+  data = c(-200, runif(num_points - 2, -1*10, 10), 200)
+  filter = data
+
+  res = mapperKD(k = 1,
+                 distance = as.matrix(dist(data)),
+                 filter = filter,
+                 interval_scheme = "GMM",
+                 width = 0.1,
+                 clustering_method = cluster_random)
+
+  expect_equal(1:num_points, sort(unique(unlist(res$points_in_nodes))))
+  expect_equal(1:num_points, sort(unique(unlist(res$points_per_interval))))
+
+  # Random scenarios
+  num_ite = 50*percetange_of_test
+  for(i in 1:num_ite)
+  {
+    num_points = sample(100:500,1) + 2
+    data = c(-200, runif(num_points - 2, -1*10, 10), 200)
+    filter = data
+    w = sample(1:300,1)/100
+
+    res = mapperKD(k = 1,
+                   distance = as.matrix(dist(data)),
+                   filter = filter,
+                   interval_scheme = "GMM",
+                   width = w,
+                   clustering_method = cluster_random)
+
+    expect_equal(1:num_points, sort(unique(unlist(res$points_in_nodes))))
+    expect_equal(1:num_points, sort(unique(unlist(res$points_per_interval))))
+  }
+
+})
+
+
+context("MapperKD Tests. GMM Complete Set Coverage. 2 Dimensions")
+# Set Coverage
+test_that("Toy Examples. Complete Set Coverage 2 Dimensions", {
+
+
+  # Random sample
+  num_points = 500
+  data = runif(num_points, -1*num_points, num_points)
+  filter = cbind(runif(num_points, -1*num_points, num_points), runif(num_points, -1*10*num_points, 10*num_points))
+
+  res = mapperKD(k = 2,
+                 distance = as.matrix(dist(data)),
+                 filter = filter,
+                 interval_scheme = "GMM",
+                 width = 0.1,
+                 clustering_method = cluster_random)
+
+  expect_equal(1:num_points, sort(unique(unlist(res$points_in_nodes))))
+  expect_equal(1:num_points, sort(unique(unlist(res$points_per_interval))))
+
+
+  # Random sample plus outliers
+  num_points = 500 + 2
+  data = c(-200, runif(num_points - 2, -1*10, 10), 200)
+  filter = cbind(data, data)
+
+
+  res = mapperKD(k = 2,
+                 distance = as.matrix(dist(data)),
+                 filter = filter,
+                 interval_scheme = "GMM",
+                 width = 0.1,
+                 clustering_method = cluster_random)
+
+  expect_equal(1:num_points, sort(unique(unlist(res$points_in_nodes))))
+  expect_equal(1:num_points, sort(unique(unlist(res$points_per_interval))))
+
+
+  # Random scenarios
+  num_ite = 50*percetange_of_test
+  for(i in 1:num_ite)
+  {
+    num_points = sample(100:500,1) + 2
+    data = cbind(c(-200, runif(num_points - 2, -1*10, 10), 200), c(-200, runif(num_points - 2, -1*10, 10), 200))
+    filter = data
+    w = sample(1:300,1)/100
+
+    res = mapperKD(k = 2,
+                   distance = as.matrix(dist(data)),
+                   filter = filter,
+                   interval_scheme = "GMM",
+                   width = w,
+                   clustering_method = cluster_random)
+
+    expect_equal(1:num_points, sort(unique(unlist(res$points_in_nodes))))
+    expect_equal(1:num_points, sort(unique(unlist(res$points_per_interval))))
+  }
+
+
+})
 
 
 

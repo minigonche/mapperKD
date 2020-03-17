@@ -3,6 +3,8 @@ mapperKD_functions.R,mapperKD,error_scenarios,,PARTIAL,test_maperkd_unit.R,Sever
 mapperKD_functions.R,mapperKD,scenario,clique,PARTIAL,test_maperkd.R,"Creates random clique scenarios, includgin high overlapping widows and random overlap but with single value filter"
 mapperKD_functions.R,mapperKD,scenario,circle 1d,PARTIAL,test_maperkd.R,Selected circle over 1 dimension. Missing different cluster functions
 mapperKD_functions.R,mapperKD,scenario,circle 2d,PARTIAL,test_maperkd.R,Selected circle over 2 dimension. Missing different cluster functions
+mapperKD_functions.R,mapperKD,complete,Coverage Fixed Intervals,YES,test_maperkd.R,Tests that the output contains the same number of elements in the set
+mapperKD_functions.R,mapperKD,complete,Coverage GMM Intervals,YES,test_maperkd.R,Tests that the output contains the same number of elements in the set
 mapperKD_functions.R,advance_coordinates,complete,,YES,test_maperkd_unit.R,4 selected cases
 mapperKD_functions.R,construct_step_grid,complete,,YES,test_maperkd_unit.R,"Several selected and random cases for 1,2 and n dimensions"
 mapperKD_functions.R,construct_step_grid_by_max_search,complete,,YES,test_maperkd_unit.R,Selected and random scenarios
