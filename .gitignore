@@ -1,4 +1,5 @@
 examples/malaria/script_mock.R
+examples/corona/script_mock.R
 .Rproj.user
 .Rhistory
 .RData
