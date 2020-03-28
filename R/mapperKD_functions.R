@@ -14,13 +14,18 @@ library('sets')
 #' @param k a positive integer indicating the number of dimensions of the filter space
 #' @param distance an n x n matrix of pairwise distances or dissimilarities. If the parameter \code{local_distance} is set to \code{TRUE}, this parameter is ignored since the clustering algorithm will receive a subset of the data.
 #' @param filter an n x k matrix of the filter space values, where n corresponds to the number of observations and k to the filter space dimension.
-#' @param interval_scheme A string indicating the interval scheme. Default value is: FIXED Currently there is only support for two schemes:
+#' @param interval_scheme A string indicating the interval scheme. Currently there is only support for two schemes:
 #'        - FIXED: traditional scheme. The user must provide the number of intervals (\code{num_intervals}) and the percentage of overlap (\code{overlap})
 #'        - GMM: Gaussian Mixed Model. Excecutes a GMM procedure over each dimension to infer the intervals and overlaps to be used.
+#'        Default value is: FIXED
 #' @param num_intervals a vector of k positive integers, the number of intervals for each correspong dimension of the filter space.
 #' @param overlap a vector of k numbers between 0 and 100, specifying how much adjacent intervals should overlap for each dimension of the filter space.
 #' @param width Parameter used when the interval_scheme is GMM. Corresponds to the width of the clusters when excecuting GMM, each interval corresponds to [mean - width*std, mean + width*std] (for each dimension)
-#' @param clustering_method clustering method to be used for each pre-image. If the parameter \code{local_distance} is set to \code{TRUE}, the given funtion must receive as a parameter a distance matrix. If the parameter \code{local_distance} is set to \code{FALSE}, the given funtion must receive as a parameter a list of indices (The indices of the corresponding interval). In any case, it mus return an array with the corresiponding number cluster for each of the given points. Clusters numbers must start with 1 and have no gaps between them. Default is: hierarchical_clustering
+#' @param clustering_method clustering method to be used for each pre-image.
+#'                          - If the parameter \code{local_distance} is set to \code{FALSE}, the given funtion must receive as a parameter a distance matrix.
+#'                          - If the parameter \code{local_distance} is set to \code{TRUE}, the given funtion must receive as a parameter a list of indices (The indices of the corresponding interval).
+#'                          In any case, it mus return an array with the corresiponding number cluster for each of the given points. Clusters numbers must start with 1 and have no gaps between them.
+#'                          Default value is: hierarchical_clustering
 #' @param local_distance a boolean indicating if the algorithm should construct the distance function based on the data at every pre-image. Usefull for low RAM enviorments or specific clustering. Default value is \code{FALSE}
 #'
 #' @return An object of class \code{one_skeleton} which is composed of the following items:

@@ -164,6 +164,7 @@ plot_1_skeleton = function(one_skeleton_result, layout = 'GRID', min_node_size =
 
 # extract_intersection_centrality
 #' Extracts the intersection centrality described in Knudson, Angélica, et al. "Spatio-temporal dynamics of Plasmodium falciparum transmission within a spatial unit on the Colombian Pacific Coast." Scientific Reports 10.1 (2020): 1-16.
+#' The centrality of a point or case corresponds to the amount of the one skeleton nodes it appears in.
 #' @param one_skeleton_result The one_skeleton object to extract the centralities
 #' @return A vector with numeric values corresponding to the intersection centrality of the elements in the given one_skeleton
 extract_intersection_centrality = function(one_skeleton_result)
@@ -176,6 +177,11 @@ extract_intersection_centrality = function(one_skeleton_result)
 
 # create_point_intersection_adjacency
 #' Constructs the Point Intersection Network as described in Knudson, Angélica, et al. "Spatio-temporal dynamics of Plasmodium falciparum transmission within a spatial unit on the Colombian Pacific Coast." Scientific Reports 10.1 (2020): 1-16.
+#' The network is constructed as follows:
+#' - Each case correspond to a single node.
+#' - Only cases that appear together in a node of the one skeleton can have an edge between them.
+#' - Directed edges are created from all cases inside a node to the case/cases with the highest intersection centrality.
+#' - No edge is created if between two nodes if both of them have the same intersection centrality.
 #' @param one_skeleton_result A one_skeleton object to construct the network
 #' @return The corresponding adjacency matrix for the point intersection network
 create_point_intersection_adjacency = function(one_skeleton_result)
@@ -191,7 +197,7 @@ create_point_intersection_adjacency = function(one_skeleton_result)
   {
     # Gets the points inside the node
     elements_in_node = one_skeleton_result$points_in_nodes[[i]]
-    # Calculates the centrality of the elements inside the node
+    # Extracts the centrality of the elements inside the node
     centrality_in_node = centrality[elements_in_node]
 
     #Exctracts the central elements
@@ -279,7 +285,7 @@ plot_intersection_network = function(one_skeleton_result, groups = NULL, min_nod
   {
     leg = extract_color_legend(groups)
     op <- par(cex = 0.7)
-    legend('topleft', legend=leg[['Labels']], fill = leg[['Colors']], title="Groups")
+    legend('topleft', legend=leg[['Labels']], fill = leg[['Colors']], title="Groups", inset=c(-.08,0))
   }
 
 
