@@ -1,5 +1,8 @@
 # Epidemiology Module Test
 
+# Size of test
+percetange_of_test = 1
+
 # Test the convert to graph function
 
 context("Epidemiology Tests. Function: Convert to Graph")
@@ -181,10 +184,10 @@ test_that("Epidemiology Tests. Function: Extract Intersection Centrality", {
 })
 
 
-context("Epidemiology Tests. Function: Create Point Intersection Adjacency")
+context("Epidemiology Tests. Function: Create Point Intersection Adjacency (Matrix)")
 
 
-test_that("Epidemiology Tests. Function: Create Point Intersection Adjacency", {
+test_that("Epidemiology Tests. Function: Create Point Intersection Adjacency (Matrix)", {
 
   # Completely Disconnected (no edges in one skeleton)
   one_skeleton_result = list()
@@ -194,7 +197,7 @@ test_that("Epidemiology Tests. Function: Create Point Intersection Adjacency", {
   one_skeleton_result$points_in_nodes[[2]] = c(2)
   one_skeleton_result$points_in_nodes[[3]] = c(3)
 
-  resp = create_point_intersection_adjacency(one_skeleton_result)
+  resp = create_point_intersection_adjacency_matrix(one_skeleton_result)
   expect_equal(dim(resp), c(3,3))
   expect_equal(sum(resp), 0)
 
@@ -207,7 +210,7 @@ test_that("Epidemiology Tests. Function: Create Point Intersection Adjacency", {
   one_skeleton_result$points_in_nodes[[3]] = c(1,2,3,4)
   one_skeleton_result$points_in_nodes[[4]] = c(1,2,3,4)
 
-  resp = create_point_intersection_adjacency(one_skeleton_result)
+  resp = create_point_intersection_adjacency_matrix(one_skeleton_result)
   expect_equal(dim(resp), c(4,4))
   expect_equal(sum(resp), 0)
 
@@ -219,7 +222,7 @@ test_that("Epidemiology Tests. Function: Create Point Intersection Adjacency", {
   one_skeleton_result$points_in_nodes[[2]] = c(2,3,4)
   one_skeleton_result$points_in_nodes[[3]] = c(3,4)
 
-  resp = create_point_intersection_adjacency(one_skeleton_result)
+  resp = create_point_intersection_adjacency_matrix(one_skeleton_result)
   expect_equal(dim(resp), c(4,4))
   expect_equal(sum(diag(resp)),0)
   expect_equal(resp[1,2], 0)
@@ -243,7 +246,7 @@ test_that("Epidemiology Tests. Function: Create Point Intersection Adjacency", {
   one_skeleton_result$points_in_nodes[[2]] = c(2,3)
   one_skeleton_result$points_in_nodes[[3]] = c(2,3,4)
 
-  resp = create_point_intersection_adjacency(one_skeleton_result)
+  resp = create_point_intersection_adjacency_matrix(one_skeleton_result)
   expect_equal(dim(resp), c(4,4))
   expect_equal(sum(diag(resp)),0)
   expect_equal(resp[1,2], 1)
@@ -269,7 +272,7 @@ test_that("Epidemiology Tests. Function: Create Point Intersection Adjacency", {
   one_skeleton_result$points_in_nodes[[3]] = c(4,5,6)
   one_skeleton_result$points_in_nodes[[4]] = c(6)
 
-  resp = create_point_intersection_adjacency(one_skeleton_result)
+  resp = create_point_intersection_adjacency_matrix(one_skeleton_result)
   expect_equal(dim(resp), c(4,4))
   expect_equal(sum(diag(resp)),0)
   expect_equal(resp[1,2], 0)
@@ -311,3 +314,117 @@ test_that("Epidemiology Tests. Function: Create Point Intersection Adjacency", {
 })
 
 
+
+
+context("Epidemiology Tests. Function: Create Point Intersection Adjacency (Edge List)")
+
+
+test_that("Epidemiology Tests. Function: Create Point Intersection Adjacency (Edge List)", {
+
+  # Completely Disconnected (no edges in one skeleton)
+  one_skeleton_result = list()
+  one_skeleton_result$num_nodes = 3
+  one_skeleton_result$points_in_nodes = list()
+  one_skeleton_result$points_in_nodes[[1]] = c(1)
+  one_skeleton_result$points_in_nodes[[2]] = c(2)
+  one_skeleton_result$points_in_nodes[[3]] = c(3)
+
+  resp = create_point_intersection_edge_list(one_skeleton_result)
+  expect_equal(nrow(resp), 0)
+
+
+  # Completely Disconnected (full clique in one skeleton)
+  one_skeleton_result = list()
+  one_skeleton_result$num_nodes = 4
+  one_skeleton_result$points_in_nodes = list()
+  one_skeleton_result$points_in_nodes[[1]] = c(1,2,3,4)
+  one_skeleton_result$points_in_nodes[[2]] = c(1,2,3,4)
+  one_skeleton_result$points_in_nodes[[3]] = c(1,2,3,4)
+  one_skeleton_result$points_in_nodes[[4]] = c(1,2,3,4)
+
+  resp = create_point_intersection_edge_list(one_skeleton_result)
+  expect_equal(nrow(resp), 0)
+
+  # Network as a star (single central element)
+  one_skeleton_result = list()
+  one_skeleton_result$num_nodes = 3
+  one_skeleton_result$points_in_nodes = list()
+  one_skeleton_result$points_in_nodes[[1]] = c(1,2,3)
+  one_skeleton_result$points_in_nodes[[2]] = c(2,3,4)
+  one_skeleton_result$points_in_nodes[[3]] = c(3,4)
+
+  resp = create_point_intersection_edge_list(one_skeleton_result)
+  resp = resp[order(resp$origin, resp$destination),]
+  expect_equal(nrow(resp), 3)
+  expect_equal(as.numeric(resp[1,]), c(1,3))
+  expect_equal(as.numeric(resp[2,]), c(2,3))
+  expect_equal(as.numeric(resp[3,]), c(4,3))
+
+  # Network as a star (double central element)
+  one_skeleton_result = list()
+  one_skeleton_result$num_nodes = 3
+  one_skeleton_result$points_in_nodes = list()
+  one_skeleton_result$points_in_nodes[[1]] = c(1,2,3)
+  one_skeleton_result$points_in_nodes[[2]] = c(2,3)
+  one_skeleton_result$points_in_nodes[[3]] = c(2,3,4)
+
+  resp = create_point_intersection_edge_list(one_skeleton_result)
+  resp = resp[order(resp$origin, resp$destination),]
+  expect_equal(nrow(resp), 4)
+  expect_equal(as.numeric(resp[1,]), c(1,2))
+  expect_equal(as.numeric(resp[2,]), c(1,3))
+  expect_equal(as.numeric(resp[3,]), c(4,2))
+  expect_equal(as.numeric(resp[4,]), c(4,3))
+
+  # Network as a double star (single central element)
+  one_skeleton_result = list()
+  one_skeleton_result$num_nodes = 4
+  one_skeleton_result$points_in_nodes = list()
+  one_skeleton_result$points_in_nodes[[1]] = c(1,2,3)
+  one_skeleton_result$points_in_nodes[[2]] = c(3)
+  one_skeleton_result$points_in_nodes[[3]] = c(4,5,6)
+  one_skeleton_result$points_in_nodes[[4]] = c(6)
+
+  resp = create_point_intersection_edge_list(one_skeleton_result)
+  resp = resp[order(resp$origin, resp$destination),]
+
+  expect_equal(nrow(resp), 4)
+  expect_equal(as.numeric(resp[1,]), c(1,3))
+  expect_equal(as.numeric(resp[2,]), c(2,3))
+  expect_equal(as.numeric(resp[3,]), c(4,6))
+  expect_equal(as.numeric(resp[4,]), c(5,6))
+
+
+})
+
+
+
+context("Epidemiology Tests. Function: Point Intersection Compare Adjacency Matrix and Edge List")
+
+
+test_that("Epidemiology Tests. Function: Point Intersection Compare Adjacency Matrix and Edge List", {
+
+  num_ite = 100*percetange_of_test
+  #num_ite = 1
+  for(k in 1:num_ite)
+  {
+
+    one_skeleton_result = list()
+    one_skeleton_result$num_nodes =  sample(2:50, 1)
+    one_skeleton_result$points_in_nodes = list()
+    one_skeleton_result$points_in_nodes[[1]] = 1:50
+    for (i in 2:one_skeleton_result$num_nodes )
+      one_skeleton_result$points_in_nodes[[i]] = sample(1:50, sample(1:30))
+
+
+    resp_edge = create_point_intersection_edge_list(one_skeleton_result)
+    resp_matrix = create_point_intersection_adjacency_matrix(one_skeleton_result)
+
+    # Same number
+    expect_equal(sum(resp_matrix), nrow(resp_edge))
+    for( i in 1:nrow(resp_edge))
+      expect_equal(resp_matrix[resp_edge[i,'origin'],resp_edge[i,'destination']], 1)
+
+  }
+
+})

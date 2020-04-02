@@ -175,16 +175,16 @@ extract_intersection_centrality = function(one_skeleton_result)
 }
 
 
-# create_point_intersection_adjacency
-#' Constructs the Point Intersection Network as described in Knudson, Angélica, et al. "Spatio-temporal dynamics of Plasmodium falciparum transmission within a spatial unit on the Colombian Pacific Coast." Scientific Reports 10.1 (2020): 1-16.
+# create_point_intersection_adjacency_matrix
+#' Constructs the Point Intersection Network (respresented as a matrix) as described in Knudson, Angélica, et al. "Spatio-temporal dynamics of Plasmodium falciparum transmission within a spatial unit on the Colombian Pacific Coast." Scientific Reports 10.1 (2020): 1-16.
 #' The network is constructed as follows:
 #' - Each case correspond to a single node.
 #' - Only cases that appear together in a node of the one skeleton can have an edge between them.
 #' - Directed edges are created from all cases inside a node to the case/cases with the highest intersection centrality.
-#' - No edge is created if between two nodes if both of them have the same intersection centrality.
+#' - No edge is created between two cases if both of them have the same intersection centrality.
 #' @param one_skeleton_result A one_skeleton object to construct the network
 #' @return The corresponding adjacency matrix for the point intersection network
-create_point_intersection_adjacency = function(one_skeleton_result)
+create_point_intersection_adjacency_matrix = function(one_skeleton_result)
 {
   # Computes centrality
   centrality = extract_intersection_centrality(one_skeleton_result)
@@ -215,6 +215,43 @@ create_point_intersection_adjacency = function(one_skeleton_result)
 
 }
 
+
+# create_point_intersection_edge_list
+#' Constructs the Point Intersection Network (respresented as an edge list) as described in Knudson, Angélica, et al. "Spatio-temporal dynamics of Plasmodium falciparum transmission within a spatial unit on the Colombian Pacific Coast." Scientific Reports 10.1 (2020): 1-16.
+#' The network is constructed as follows:
+#' - Each case correspond to a single node.
+#' - Only cases that appear together in a node of the one skeleton can have an edge between them.
+#' - Directed edges are created from all cases inside a node to the case/cases with the highest intersection centrality.
+#' - No edge is created between two cases if both of them have the same intersection centrality.
+#' @param one_skeleton_result A one_skeleton object to construct the network
+#' @return A data.frame with the columns: origin and destination, where each entry corresponds to an edge.
+create_point_intersection_edge_list = function(one_skeleton_result)
+{
+  # Computes centrality
+  centrality = extract_intersection_centrality(one_skeleton_result)
+
+  # Extracts the number of one skeleton nodes
+  n = one_skeleton_result$num_nodes
+  # Computes the central and not central elements by node
+  max_centrality = sapply(one_skeleton_result$points_in_nodes, function(elem_in_node){max(centrality[elem_in_node])})
+  central_elements = lapply(1:n, function(i){one_skeleton_result$points_in_nodes[[i]][centrality[one_skeleton_result$points_in_nodes[[i]]] == max_centrality[i]]})
+  non_central_elements = lapply(1:n, function(i){one_skeleton_result$points_in_nodes[[i]][centrality[one_skeleton_result$points_in_nodes[[i]]] < max_centrality[i]]})
+
+  # Creates the edges
+  # First by node
+  edge_list_by_node = lapply(1:n, function(i){expand.grid(non_central_elements[[i]], central_elements[[i]])})
+
+  # Binds them and deletes duplicates
+  edge_list = unique(do.call("rbind", edge_list_by_node))
+
+  # Sets the columns
+  names(edge_list) = c("origin","destination")
+
+  return(edge_list)
+
+}
+
+
 # create_point_intersection_network
 #' Constructs the Point Intersection Network as described in Knudson, Angélica, et al. "Spatio-temporal dynamics of Plasmodium falciparum transmission within a spatial unit on the Colombian Pacific Coast." Scientific Reports 10.1 (2020): 1-16.
 #' @param one_skeleton_result A one_skeleton object to construct the network
@@ -224,7 +261,7 @@ create_point_intersection_network = function(one_skeleton_result)
   # Loads igraph
   require('igraph')
 
-  adjacency = create_point_intersection_adjacency(one_skeleton_result)
+  adjacency = create_point_intersection_adjacency_matrix(one_skeleton_result)
   pin = graph.adjacency(adjacency, mode = 'directed')
 
   # Sets the default parameters
@@ -447,7 +484,7 @@ plot_intersection_network_over_map = function(one_skeleton_result,
 create_plot_elements_for_point_intersection_network = function(one_skeleton_result, lon, lat)
 {
   # Extracts adjacency
-  adj_matrix = create_point_intersection_adjacency(one_skeleton_result)
+  adj_matrix = create_point_intersection_adjacency_matrix(one_skeleton_result)
   # Constructs the arrows
   # Sorry for the loop
   org = c()
@@ -489,8 +526,8 @@ create_plot_elements_for_point_intersection_network = function(one_skeleton_resu
 #' @return Numeric value containing the hamming distance
 hamming_distance = function(one_skeleton_1, one_skeleton_2)
 {
-  adj_1 = create_point_intersection_adjacency(one_skeleton_1)
-  adj_2 = create_point_intersection_adjacency(one_skeleton_2)
+  adj_1 = create_point_intersection_adjacency_matrix(one_skeleton_1)
+  adj_2 = create_point_intersection_adjacency_matrix(one_skeleton_2)
   if(any(dim(adj_1) != dim(adj_2)))
     stop(paste('The received skeletons have:', dim(adj_1)[1], 'and', dim(adj_1)[2],', so the' ))
 

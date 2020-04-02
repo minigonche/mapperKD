@@ -20,7 +20,8 @@ epidemiology_module.R,construct_grid_graph_layout,complete,,NO,,
 epidemiology_module.R,get_filter_dimension,complete,,YES,test_epidemiology_module.R,Selected scenarios only
 epidemiology_module.R,plot_1_esqueleton,complete,,NO,,
 epidemiology_module.R,extract_intersection_centrality,complete,,YES,test_epidemiology_module.R,Selected scenarios only
-epidemiology_module.R,create_point_intersection_adjacency,complete,,YES,test_epidemiology_module.R,Selected scenarios only
+epidemiology_module.R,create_point_intersection_adjacency_matrix,complete,,YES,test_epidemiology_module.R,Selected scenarios and randomly compares it with create_point_intersection_edge_list
+epidemiology_module.R,create_point_intersection_edge_list,complete,,YES,test_epidemiology_module.R,Selected scenarios and randomly compares it with create_point_intersection_adjacency_matrix
 epidemiology_module.R,create_point_intersection_network,complete,,NO,,
 epidemiology_module.R,plot_intersection_network,complete,,NO,,
 epidemiology_module.R,plot_intersection_network_over_map,complete,,NO,,
