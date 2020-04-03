@@ -261,8 +261,14 @@ create_point_intersection_network = function(one_skeleton_result)
   # Loads igraph
   require('igraph')
 
-  adjacency = create_point_intersection_adjacency_matrix(one_skeleton_result)
-  pin = graph.adjacency(adjacency, mode = 'directed')
+
+  # Extracts the edge list
+  edge_list = create_point_intersection_edge_list(one_skeleton_result)
+  # Extracts the vertices
+  vertices = unique(unlist(one_skeleton_result$points_in_nodes))
+
+  # Creates the network
+  pin = graph_from_data_frame(d = edge_list, vertices = vertices, directed = TRUE)
 
   # Sets the default parameters
   V(pin)$label = NA
@@ -308,7 +314,7 @@ plot_intersection_network = function(one_skeleton_result, groups = NULL, min_nod
   if(!is.null(groups))
   {
     # Assigns the color
-    V(pin)$color = extract_colors(groups)
+    V(pin)$color = extract_colors(unique(groups), groups)
   }
 
 
@@ -334,18 +340,22 @@ plot_intersection_network = function(one_skeleton_result, groups = NULL, min_nod
 #' @param one_skeleton_result A one_skeleton object to construct the network
 #' @param lon A vector with the longitude coordinates (in decimal notation) of the points
 #' @param lat A vector with the latitude coordinates (in decimal notation) of the points
-#' @param groups A vector with the corresponding groups of the elements. This group identification will be used for coloring.
+#' @param groups A vector with the corresponding groups of the elements. This group identification will be used for coloring. If null al nodes will be red. Default value is blue
 #' @param min_node_size Minimum node size. Default is 1.
 #' @param max_node_size Maximum node size. Default is 5.
 #' @param noise Indicates the percentage of noise to add to the coordinates to avoid overlapping in the map. Must be a value between 0 and 100, correspondig to the percentage of the radius of the map to include as noise (default is 1)
 #' @param arrow_color Value indicating the the color of the arrows. Can be any of the following options:
 #'        - ORIGIN: Each of the arrows will have the origin node
-#'        - DESTINATION: Each of the arrows will have the color of the destination node
+#'        - DESTINATION: Each of the arrows will have the color of the destination node.
+#'        - AVERAGE_VALUE: The colors of the arrows will be the average value between the nodes calues given in the parameter: \code{node_values}.
 #'        - (COLOR CODE): String that can be interpreted by gggplot. All arrows will have this color.
-#'        Default value is: white
+#'        Default value is: yellow
 #' @param arrow_transparency Numeric value between 0 and 1 indicating the arrow transparency. Where 0 means no transaprency and 1 is completely transparent. Deafult value is 0.
+#' @param arrow_size Numeric value for the arrow sizes. Default is 0.2
 #' @param focus_on Vecotr of indices indicating the samples that the map should focus on. This works like a zoom, focusing on the given samples. If NULL, all elements are taking inito account. NOTE: if provided, the map will output a warning for all of the points outside the scope of the focus_on.
 #' @param black_white Boolean indicating if the map should have a black and white background. Default is True.
+#' @param node_values Array of numeric values. Each entry represents a value asociated with each node to be use in the coloring scheme. Default is NULL
+#' @param node_value_name String with the name of the node values that are given. This will be used as a title of the color legend. Default value is 'Average Value'
 plot_intersection_network_over_map = function(one_skeleton_result,
                                               lon,
                                               lat,
@@ -353,10 +363,13 @@ plot_intersection_network_over_map = function(one_skeleton_result,
                                               min_node_size = 1,
                                               max_node_size = 5,
                                               noise = 1,
-                                              arrow_color = 'white',
+                                              arrow_color = 'yellow',
                                               arrow_transparency = 0,
+                                              arrow_size = 0.2,
                                               focus_on = NULL,
-                                              black_white = TRUE)
+                                              black_white = TRUE,
+                                              node_values = NULL,
+                                              node_value_name = 'Average Value')
 {
 
   # Loads igraph and plotting libraries
@@ -396,31 +409,58 @@ plot_intersection_network_over_map = function(one_skeleton_result,
   data_points = elements[['Points']]
   data_segments = elements[['Arrows']]
 
-
-  # Sets the color
+  # Sets the arrow color
   final_arrow_color = arrow_color
   if(toupper(arrow_color) == 'DESTINATION')
   {
     if(is.null(groups))
+    {
       print('The group parameter cannot be Null if the arrow coloring scheme is to be done by destination')
+      arrow_color = 'yellow'
+    }
     else
     {
       # Sorts the received groups by destination
-      final_arrow_color = extract_colors(groups = groups[data_segments$destination])
+      final_arrow_color = extract_colors(unique(groups), group_values = groups[data_segments$destination])
     }
   }
   else if(toupper(arrow_color) == 'ORIGIN')
   {
     if(is.null(groups))
+    {
       print('The group parameter cannot be Null if the arrow coloring scheme is to be done by origin')
+      arrow_color = 'yellow'
+    }
     else
     {
       # Sorts the received groups by destination
-      final_arrow_color = extract_colors(groups = groups[data_segments$origin])
+      final_arrow_color = extract_colors(unique(groups), group_values = groups[data_segments$origin])
     }
   }
+  else if(toupper(arrow_color) == 'AVERAGE_VALUE')
+  {
 
+    if(is.null(node_values))
+    {
+      print('The node_values parameter cannot be Null if the arrow coloring scheme is to be done by average value')
+      arrow_color = 'yellow'
+    }
+    else
+    {
+      # Extracts the edge list
+      edge_list = create_point_intersection_edge_list(one_skeleton_result)
+      # Creates the color
+      data_segments$average_value = (node_values[edge_list$origin] + node_values[edge_list$destination])/2
 
+      if(!is.null(groups))
+      {
+        print('Coloring arrows by average value overwrites group coloring. All nodes will be shown in their default color')
+        groups = NULL
+      }
+
+    }
+
+  }
 
   # Adjust the sizes
   # Extracts the size from the pin network (in degree)
@@ -466,13 +506,27 @@ plot_intersection_network_over_map = function(one_skeleton_result,
   map = get_map(c(left = left, bottom = bottom, right = right, top =top), maptype = 'satellite', color = back_color)
 
   # Constructs the plot
-  p =  ggmap(map) + geom_point(data = data_points, aes(x = lon, y = lat, color = groups), size = final_size) +
-    geom_segment(data = data_segments, aes(x = x1, y = y1, xend = x2, yend = y2), color = final_arrow_color, alpha = (1 - arrow_transparency), size = 0.12, arrow = arrow(length = unit(0.015, "npc")))
+  # Points and map, depending on group coloring
+  if(!is.null(groups))
+    p =  ggmap(map) + geom_point(data = data_points, aes(x = lon, y = lat, color = groups), size = final_size)
+  else
+    p =  ggmap(map) + geom_point(data = data_points, aes(x = lon, y = lat), color = 'red2', size = final_size)
+  # Segments
+  # Depending on color scheme
+  if(toupper(arrow_color) == 'AVERAGE_VALUE' && "average_value" %in% colnames(data_segments))
+  {
+    p = p + geom_segment(data = data_segments, aes(x = x1, y = y1, xend = x2, yend = y2, color = average_value), alpha = (1 - arrow_transparency), size = arrow_size, arrow = arrow(length = unit(0.015, "npc")))  +
+      scale_color_continuous(type = "viridis") +
+      labs(color = node_value_name)
+  }
+  else
+    p = p + geom_segment(data = data_segments, aes(x = x1, y = y1, xend = x2, yend = y2), color = final_arrow_color, alpha = (1 - arrow_transparency), size = arrow_size, arrow = arrow(length = unit(0.015, "npc")))
 
   plot(p)
 }
 
-# TODO: Remove For Loop
+
+
 # create_plot_elements_for_point_intersection_network
 #' Creates the elements to plot the point intersection network with geographical coordinates
 #' @param one_skeleton_result A one_skeleton object to construct the network
@@ -484,22 +538,10 @@ plot_intersection_network_over_map = function(one_skeleton_result,
 create_plot_elements_for_point_intersection_network = function(one_skeleton_result, lon, lat)
 {
   # Extracts adjacency
-  adj_matrix = create_point_intersection_adjacency_matrix(one_skeleton_result)
+  edge_list = create_point_intersection_edge_list(one_skeleton_result)
   # Constructs the arrows
-  # Sorry for the loop
-  org = c()
-  dest = c()
-  for(i in 1:nrow(adj_matrix))
-  {
-    for(j in 1:ncol(adj_matrix))
-    {
-      if(adj_matrix[i,j] == 1)
-      {
-           org = c(org, i)
-           dest = c(dest,j)
-      }
-    }
-  }
+  org = edge_list$origin
+  dest = edge_list$destination
 
   # Creates the coordinates of the arrows (strat and finish)
   # Start
@@ -540,12 +582,14 @@ hamming_distance = function(one_skeleton_1, one_skeleton_2)
 
 # extract_colors
 #' Support function for extracting the colors that ggplot will assign to each group element
-#' @param groups Vector with the aestetic vector that ggplot will use
+#' @param group_values Vector with the different groups available
+#' @param group_values Vector with the aestetic vector that ggplot will use
 #' @return Vector with the corresponding headecimal color for each element. This assings the same color to the elements that the aestetic color procedure would do in ggplot
-extract_colors = function(groups)
+extract_colors = function(groups, group_values)
 {
 
   groups = as.vector(sapply(groups, toString))
+
   unique_groups = sort(unique(groups))
   # Creates the colors
   # Emulates ggplot. This is done so that this graph and the one over the map have the same colors
@@ -554,7 +598,7 @@ extract_colors = function(groups)
   colors = hcl(h = hues, l = 65, c = 100)[1:n]
 
   # Finds the color for each group
-  index = as.vector(sapply(groups, function(g){match(g,unique_groups)}))
+  index = as.vector(sapply(group_values, function(g){match(g,unique_groups)}))
   final_colors = colors[index]
 
   return(final_colors)
