@@ -10,8 +10,9 @@
 # convert_to_graph
 #' Transforms the given 1 skeleton result into an igraph graph.
 #' @param one_skeleton_result The one_skeleton to convert
+#' @param include_label boolean indicating if the label of the node should be included
 #' @return A vector with the corresponding sizes
-convert_to_graph = function(one_skeleton_result)
+convert_to_graph = function(one_skeleton_result, include_label = FALSE)
 {
   # Loads igraph
   require('igraph')
@@ -19,7 +20,9 @@ convert_to_graph = function(one_skeleton_result)
   # Creates the graph
   g = graph.adjacency(one_skeleton_result$adjacency_matrix, mode = 'undirected')
   # Sets colors and labels
-  V(g)$label = NA
+  if(!include_label)
+    V(g)$label = NA
+
   V(g)$color = rgb(0.2,1,0,0.3) # Lightgreen
   return(g)
 }
@@ -85,7 +88,7 @@ construct_grid_graph_layout = function(one_skeleton_result)
 
     }
     else
-      stop(paste('Unsuported amount of dimensions of the filter:',filter_dim))
+      stop(paste('Unsuported amount of dimensions for the grid:',filter_dim))
 
   }
 
@@ -117,24 +120,56 @@ get_filter_dimension = function(one_skeleton_result)
 #' @param layout The layout. This can either be a two column matrix with the x and y coordinates of each node of the 1 skeleton or one of the following strings:
 #'         - GRID: calculates the layout using the method: construct_grid_graph_layout.
 #'         - AUTO: The layout is calculated using the funciton: layout_nicely from the igraph package
+#'         - FILTER: The layout will be done according to the given filter function. If one dimensional, the Y componenet will be random. Only the first two components of the  filter will be used.
 #'         Defualt value is GRID
 #' @param min_node_size Minimum node size. Default is 3.
 #' @param max_node_size Maximum node size. Default is 23.
-plot_1_skeleton = function(one_skeleton_result, layout = 'GRID', min_node_size = 3, max_node_size = 23)
+#' @param include_label Boolean indicating if the node labels should be included
+#' @param filter The filter used for the construction of the one_skeleton_result. Will only be used if layout is FILTER
+#' @param noise_percentage the percentage (between 0 and 1) of the amount of noise to add. This will only be taken into account if the layout is FILTER
+plot_1_skeleton = function(one_skeleton_result, layout = 'GRID', min_node_size = 3, max_node_size = 23, include_label = FALSE, filter = NULL, noise_percentage = 0)
 {
   # Loads igraph
   require('igraph')
 
   # Constructs the graph
-  g = convert_to_graph(one_skeleton_result)
+  g = convert_to_graph(one_skeleton_result, include_label = include_label)
 
   # Constructs Layout
   if(is.character(layout) & length(layout) == 1)
   {
     if(toupper(layout) == 'GRID')
+    {
       final_layout = construct_grid_graph_layout(one_skeleton_result)
+    }
     else if(toupper(layout) == 'AUTO')
+    {
       final_layout = layout_nicely(g)
+    }
+    else if(toupper(layout) == 'FILTER')
+    {
+      filter_dim = get_filter_dimension(one_skeleton_result)
+
+      if(is.null(filter))
+        stop('If layout option is FILTER, the filter parameter cannot be null')
+
+      if(filter_dim == 1)
+      {
+        x = sapply(one_skeleton_result$points_in_nodes, function(points){mean(filter[points])})
+        y = runif(one_skeleton_result$num_nodes, min = min(x), max = max(x))
+      }
+      else
+      {
+        x = sapply(one_skeleton_result$points_in_nodes, function(points){mean(filter[points,1])})
+        y = sapply(one_skeleton_result$points_in_nodes, function(points){mean(filter[points,2])})
+      }
+
+      # Adds the noise
+      x = x + runif(length(x), min = 0, max = abs(max(x) - min(x)))*noise_percentage
+      y = y + runif(length(y), min = 0, max = abs(max(y) - min(y)))*noise_percentage
+
+      final_layout = cbind(x,y)
+    }
     else
       stop(paste('Unsupported layout option:', layout))
   }

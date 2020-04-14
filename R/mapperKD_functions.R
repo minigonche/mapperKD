@@ -27,6 +27,7 @@ library('sets')
 #'                          In any case, it mus return an array with the corresiponding number cluster for each of the given points. Clusters numbers must start with 1 and have no gaps between them.
 #'                          Default value is: hierarchical_clustering
 #' @param local_distance a boolean indicating if the algorithm should construct the distance function based on the data at every pre-image. Usefull for low RAM enviorments or specific clustering. Default value is \code{FALSE}
+#' @param verbose Boolean indicating if progress should be printed. Default option is FALSE
 #'
 #' @return An object of class \code{one_skeleton} which is composed of the following items:
 #'
@@ -69,7 +70,8 @@ mapperKD = function(k,
                     width = 2,
                     clustering_method = hierarchical_clustering,
                     local_distance = FALSE,
-                    data = NA)
+                    data = NA,
+                    verbose = FALSE)
 {
   # Corrects interval_scheme
   interval_scheme = toupper(interval_scheme)
@@ -150,7 +152,8 @@ mapperKD = function(k,
   # ------------
   # End of errrors
 
-
+  if(verbose)
+    print_message('Start.', level = 0, num_new_lines = 2)
 
   # Sets up the interval scheme
   if(toupper(interval_scheme) == "FIXED")
@@ -168,10 +171,16 @@ mapperKD = function(k,
   }
   else if(toupper(interval_scheme) == "GMM")
   {
+    if(verbose)
+      print_message('Excecuting Gaussian Mixed Model for Interval Exctaction...', level = 1, num_new_lines = 0)
+
     response = get_gmm_components(filter, width)
     intervals = response[['intervals']]
     get_interval = response[['get_interval']]
     step_grid = response[['step_grid']]
+
+    if(verbose)
+      print_message('Done.', level = 1, num_new_lines = 2)
 
 
   }
@@ -204,6 +213,17 @@ mapperKD = function(k,
 
   coordinates = rep(1,k)
 
+  # progress variables
+  progress = 0
+  total = prod(intervals)
+  jump = max(round(total*0.05),1)
+
+
+  if(verbose)
+  {
+    print_message('First Grid Navegation (Node Construction)', level = 1, num_new_lines = 1)
+    print_message('0%..', level = 1, num_new_lines = 0)
+  }
 
   # Loop ends when all coordinates get to the last value (the number of intervals)
   repeat
@@ -273,6 +293,15 @@ mapperKD = function(k,
         points_per_interval[[coordinates]] = interval_indices
     }
 
+    # Adjusts progress
+    progress = progress + 1
+    if(verbose && (progress %% jump) == 0)
+    {
+      p = round(100*progress/total)
+      m = paste(p,'%..', sep = '')
+      print_message(m, level = 0, num_new_lines = 0)
+    }
+
 
     # Stop criteria
     # Finished the last interval
@@ -287,9 +316,10 @@ mapperKD = function(k,
 
 
 
-
   }# Finish interval loop
 
+  if(verbose)
+    print_message('Done!', level = 1, num_new_lines = 2)
 
 
 
@@ -308,6 +338,15 @@ mapperKD = function(k,
 
   # Converts all the node lists to sets for efficiency
   elements_in_node_as_set = lapply(elements_in_node, as.set)
+
+  # restarts progress variable
+  progress = 0
+
+  if(verbose)
+  {
+    print_message('Second Grid Navegation (Edge Construction)', level = 1, num_new_lines = 1)
+    print_message('0%..', level = 1, num_new_lines = 0)
+  }
 
   # Loop ends when all coordinates get to the last value (the number of intervals)
   repeat
@@ -355,6 +394,19 @@ mapperKD = function(k,
       }
 
     }
+
+
+    # Adjusts progress
+    progress = progress + 1
+    if(verbose && (progress %% jump) == 0)
+    {
+      p = round(100*progress/total)
+      m = paste(p,'%..', sep = '')
+      print_message(m, level = 0, num_new_lines = 0)
+    }
+
+
+
     # Stop criteria
     # Finished the last interval
     if(all(coordinates == intervals))
@@ -366,7 +418,15 @@ mapperKD = function(k,
 
 
 
+
+
   }# Finish adjacency and degrre loop
+
+
+  if(verbose)
+    print_message('Done!', level = 1, num_new_lines = 2)
+
+
 
   # All values that stayed -1 is because there was no overlap in filter, and should not intersect in any points
   degree_matrix[degree_matrix == -1] = 0
@@ -385,6 +445,10 @@ mapperKD = function(k,
   response$points_per_interval = points_per_interval
 
 
+  if(verbose)
+    print_message('All Done!', level = 0, num_new_lines = 2)
+
+
   #Return
   return(response)
 
@@ -393,6 +457,7 @@ mapperKD = function(k,
 
 
 #' Function for advancing coordinates
+#' TODO document
 advance_coordinates = function(coordinates, max_values)
 {
   current_pos = 1
@@ -727,3 +792,27 @@ construct_gmm_get_interval_function = function(all_start_locations, all_finish_l
 
   return(get_gmm_interval)
 }
+
+
+#' print_message
+#' Support function for progress visualization
+#' @param m String with the message to display
+#' @param level The amount of ident to show in the console. Default value is 0
+#' @param new_line If the message create a new line or not. Default value is TRUE
+print_message = function(m, level = 0, num_new_lines = 1)
+{
+  # Ident
+  before = paste(rep('   ',level), collapse = '')
+
+  # New lines
+  after = ''
+  if(num_new_lines > 0)
+    after = paste(rep('\n', num_new_lines), collapse = '')
+
+  # Adds the before and after to the message
+  m_final = paste(before, m, after ,sep = '')
+
+  cat(m_final)
+
+}
+

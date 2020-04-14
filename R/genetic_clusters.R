@@ -88,7 +88,57 @@ filter_geotype_file = function(input_file_location, include_ids, output_file_loc
 
 }
 
-#input_file_location = '/home/estudiante/Documentos/mapperKD/tests/testthat/test_files/pf3k_Ghana_13.txt'
-#output_file_location = '/home/estudiante/Documentos/mapperKD/tests/testthat/test_files/pf3k_Ghana_13_filtered.txt'
-#include_ids = c( "PF0008-C", "PF0028-C", "PF0037-C")
-#filter_geotype_file(input_file_location, include_ids, output_file_location)
+
+#' random_code
+#' Support function for generating random leter codes
+#' @param n length of the code
+#' @return string of random characters
+random_code = function(n = 10)
+{
+  response = paste(sample(LETTERS, n, TRUE),  collapse='')
+  return(response)
+}
+
+
+#' excecute_ibd
+#' Method that excecutes the Identity by Descend algorithm over the received files.
+#' NOTE: All the locations of the given file should either be realtive or start with "/". This method missinterprets
+#' the symbol "~" and will not find the files.
+#' @param sample_file_location location of the sample file
+#' @param freqency_file_location location of the allele frequency file
+#' @return list with two elements:
+#'         - segments: dataframe resulting from parsing the output file <filename>.hmm.txt.
+#'         - fract: dataframe resulting from parsing the output file <filename>.hmm_fract.txt
+#'        For details on the meaning of the columns of this two dataframes (or files) please go to: https://github.com/glipsnort/hmmIBD#output-files
+excecute_ibd = function(sample_file_location, freqency_file_location)
+{
+  # Loads the HMMIBD library
+  require('hmmibdr')
+
+  # Creates the temporal file pattern
+  temp_files = tempfile(pattern = random_code(10))
+
+  # Excecutes IBD on files
+  response = hmm_ibd(input_file = sample_file_location, allele_freqs =  freqency_file_location, output_file = temp_files)
+
+  return(response)
+}
+
+
+input_file_location = '/home/minigonche/Documents/projects/mapperKD/tests/testthat/test_files/pf3k_Ghana_13.txt'
+#input_file_location = 'pf3k_Ghana_13.txt'
+filtered_file_location = '/home/minigonche/Documents/projects/mapperKD/tests/testthat/test_files/pf3k_Ghana_13_filtered.txt'
+#filtered_file_location = 'pf3k_Ghana_13_filtered.txt'
+allele_freqs =  "/home/minigonche/Documents/projects/mapperKD/tests/testthat/test_files/freqs_pf3k_Cambodia_13.txt"
+#allele_freqs =  "freqs_pf3k_Cambodia_13.txt"
+
+include_ids = c( "PF0008-C", "PF0028-C", "PF0037-C")
+filter_geotype_file(input_file_location, include_ids, filtered_file_location)
+
+res = excecute_ibd(filtered_file_location, allele_freqs)
+
+
+
+
+
+
