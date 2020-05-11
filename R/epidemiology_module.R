@@ -122,46 +122,84 @@ get_filter_dimension = function(one_skeleton_result)
 #'         - AUTO: The layout is calculated using the funciton: layout_nicely from the igraph package
 #'         - FILTER: The layout will be done according to the given filter function. If one dimensional, the Y componenet will be random. Only the first two components of the  filter will be used.
 #'         Defualt value is GRID
-#' @param min_node_size Minimum node size. Default is 3.
-#' @param max_node_size Maximum node size. Default is 23.
 #' @param include_label Boolean indicating if the node labels should be included
 #' @param filter The filter used for the construction of the one_skeleton_result. Will only be used if layout is FILTER
-#' @param noise_percentage the percentage (between 0 and 1) of the amount of noise to add. This will only be taken into account if the layout is FILTER
-plot_1_skeleton = function(one_skeleton_result, layout = 'GRID', min_node_size = 3, max_node_size = 23, include_label = FALSE, filter = NULL, noise_percentage = 0)
+#' @param noise_percentage the percentage (between 0 and 1) of the amount of noise to add.
+#' # TODO: Include Labels
+plot_1_skeleton = function(one_skeleton_result, layout = 'GRID', include_label = FALSE, filter = NULL, noise_percentage = 0)
 {
   # Loads igraph
   require('igraph')
+  require('ggplot2')
 
   # Constructs the graph
   g = convert_to_graph(one_skeleton_result, include_label = include_label)
 
-  # Constructs Layout
+  # Constructs the points and the theme
   if(is.character(layout) & length(layout) == 1)
   {
     if(toupper(layout) == 'GRID')
     {
       final_layout = construct_grid_graph_layout(one_skeleton_result)
+
+      filter_dim = get_filter_dimension(one_skeleton_result)
+
+      if(filter_dim == 1)
+      {
+        final_theme = theme(axis.text.y=element_blank(),)
+        final_labs = labs(x = "Number of Interval (First Dimension)",
+                          y = "")
+      }
+      else if(filter_dim == 2)
+      {
+        final_theme = theme()
+        final_labs = labs(x = "Number of Interval (First Dimension)",
+                          y = "Number of Interval (Second Dimension)")
+      }
+      else
+      {
+        stop(paste('Unsuported amount of dimensions for the grid:',filter_dim))
+      }
+
+
     }
     else if(toupper(layout) == 'AUTO')
     {
       final_layout = layout_nicely(g)
+
+      final_theme = theme(axis.line=element_blank(),axis.text.x=element_blank(),
+                          axis.text.y=element_blank(),axis.ticks=element_blank(),
+                          axis.title.x=element_blank(),
+                          axis.title.y=element_blank(),
+                          panel.background=element_blank(),panel.border=element_blank(),panel.grid.major=element_blank(),
+                          panel.grid.minor=element_blank(),plot.background=element_blank())
     }
     else if(toupper(layout) == 'FILTER')
     {
       filter_dim = get_filter_dimension(one_skeleton_result)
 
       if(is.null(filter))
+      {
         stop('If layout option is FILTER, the filter parameter cannot be null')
+      }
 
       if(filter_dim == 1)
       {
         x = sapply(one_skeleton_result$points_in_nodes, function(points){mean(filter[points])})
         y = runif(one_skeleton_result$num_nodes, min = min(x), max = max(x))
+
+        final_theme = theme(axis.text.y=element_blank(),)
+        final_labs = labs(x = "(Filter First Dimension)",
+                          y = "")
       }
       else
       {
         x = sapply(one_skeleton_result$points_in_nodes, function(points){mean(filter[points,1])})
         y = sapply(one_skeleton_result$points_in_nodes, function(points){mean(filter[points,2])})
+
+        final_theme = theme()
+        final_labs = labs(x = "(Filter First Dimension)",
+                          y = "(Filter Second Dimension)")
       }
 
       # Adds the noise
@@ -171,24 +209,58 @@ plot_1_skeleton = function(one_skeleton_result, layout = 'GRID', min_node_size =
       final_layout = cbind(x,y)
     }
     else
+    {
       stop(paste('Unsupported layout option:', layout))
-  }
-  else
+    }
+
+  }else
+  {
     final_layout = layout
 
-  # Adjust the sizes
-  node_size = get_1_skeleton_node_sizes(one_skeleton_result)
-  if(min(node_size) == max(node_size))
-  {
-    print('All nodes are the same size. Assuming mid point between min and max for all.')
-    final_size = rep((max_node_size - min_node_size)/2,length(node_size))
+    labs = labs()
+    final_theme = theme(axis.title.x= element_blank(),
+                        axis.title.y= element_blank())
   }
-  else
-    final_size = (max_node_size - min_node_size)*(node_size- min(node_size))/(max(node_size) - min(node_size)) + min_node_size
 
-  V(g)$size = final_size
+  points = data.frame(x = final_layout[,1], y =  final_layout[,2])
 
-  plot(g, layout = final_layout)
+  # Adds noise
+  points$x = points$x + runif(length(points$x), min = 0, max = max(points$x) - min(points$x))*noise_percentage
+  points$y = points$y + runif(length(points$y), min = 0, max = max(points$y) - min(points$y))*noise_percentage
+
+  # Adjust the sizes
+  points$size = get_1_skeleton_node_sizes(one_skeleton_result)
+
+  # Calculates the segments
+  adj = one_skeleton_result$adjacency_matrix
+  x1 = c()
+  x2 = c()
+  y1 = c()
+  y2 = c()
+
+  for(i in 1:(one_skeleton_result$num_nodes - 1))
+  {
+    for(j in (i+1):one_skeleton_result$num_nodes)
+    {
+      if(adj[i,j] == 1)
+      {
+        x1 = c(x1, points$x[i])
+        y1 = c(y1, points$y[i])
+
+        x2 = c(x2, points$x[j])
+        y2 = c(y2, points$y[j])
+      }
+    }
+  }
+
+  segments  = data.frame(x1 = x1, y1 = y1, x2 = x2, y2 = y2)
+
+  p = ggplot()
+  p = p + geom_segment(data = segments, aes(x = x1, y = y1, xend = x2, yend = y2), color = 'black', alpha = 0.5)
+  p = p + geom_point(data = points, aes(x = x, y = y,size = size), alpha = 0.5, color = 'blue')
+  p = p + final_theme + final_labs
+
+  return(p)
 
 }
 
@@ -382,7 +454,7 @@ plot_intersection_network = function(one_skeleton_result, groups = NULL, min_nod
 #' @param arrow_color Value indicating the the color of the arrows. Can be any of the following options:
 #'        - ORIGIN: Each of the arrows will have the origin node
 #'        - DESTINATION: Each of the arrows will have the color of the destination node.
-#'        - AVERAGE_VALUE: The colors of the arrows will be the average value between the nodes calues given in the parameter: \code{node_values}.
+#'        - AVERAGE_VALUE: The colors of the arrows will be the average value between the nodes values given in the parameter: \code{node_values}.
 #'        - (COLOR CODE): String that can be interpreted by gggplot. All arrows will have this color.
 #'        Default value is: yellow
 #' @param arrow_transparency Numeric value between 0 and 1 indicating the arrow transparency. Where 0 means no transaprency and 1 is completely transparent. Deafult value is 0.
